@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Slots – NeonCasino</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0a0e17; color: #e0e0e0; font-family: 'Inter', sans-serif; min-height: 100vh; overflow: hidden; }
+        
+        header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; border-bottom: 1px solid #1a2035; position: relative; z-index: 10; background: #0a0e17; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: #00ff88; text-decoration: none; letter-spacing: 2px; }
+        .wallet { background: #111827; border: 1px solid #1e2d40; border-radius: 10px; padding: 8px 16px; display: flex; align-items: center; gap: 10px; }
+        .wallet-amount { font-weight: 700; color: #00ff88; }
+
+        .game-container { max-width: 600px; margin: 40px auto; text-align: center; }
+
+        /* --- SLOT MACHINE --- */
+        .slot-machine {
+            background: linear-gradient(180deg, #111827 0%, #0a0e17 100%);
+            border: 4px solid #1a2535; border-radius: 40px;
+            padding: 40px 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 0 20px #00ff8811;
+            position: relative;
+        }
+
+        .viewport {
+            display: flex; justify-content: center; gap: 15px;
+            background: #05070a; padding: 0; border-radius: 20px;
+            border: 2px solid #1a2535; height: 160px; /* Wysokość okna bębnów */
+            overflow: hidden; position: relative;
+            box-shadow: inset 0 40px 40px -20px rgba(0,0,0,0.9), inset 0 -40px 40px -20px rgba(0,0,0,0.9);
+        }
+
+        .reel-window {
+            width: 100px; height: 100%; background: #0d121d;
+            border-radius: 10px; position: relative; overflow: hidden;
+            border: 1px solid #1a2535;
+        }
+
+        .reel-strip {
+            position: absolute; top: 0; left: 0; width: 100%;
+            display: flex; flex-direction: column; align-items: center;
+            transition: transform 3s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+            will-change: transform;
+        }
+
+        .symbol {
+            height: 160px; min-height: 160px; width: 100%; /* Wysokość symbolu równa wysokości okna */
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3.5rem; filter: drop-shadow(0 0 10px rgba(0, 255, 136, 0.2));
+            line-height: 160px; /* Centrowanie pionowe */
+        }
+
+        /* --- UI & BUTTONS --- */
+        .win-display { height: 50px; margin-top: 25px; font-size: 1.8rem; font-weight: 900; color: #00ff88; text-transform: uppercase; }
+
+        .controls { margin-top: 20px; display: flex; flex-direction: column; gap: 15px; padding: 0 40px; }
+        .bet-input { background: #0a0e17; border: 2px solid #1a2535; color: #fff; padding: 15px; border-radius: 15px; text-align: center; font-weight: 800; font-size: 1.3rem; outline: none; transition: 0.3s; }
+        .bet-input:focus { border-color: #00ff88; box-shadow: 0 0 15px #00ff8822; }
+        
+        button#spinBtn {
+            background: #00ff88; color: #0a0e17; border: none; padding: 22px; border-radius: 18px;
+            font-size: 1.5rem; font-weight: 900; cursor: pointer; text-transform: uppercase;
+            letter-spacing: 2px; transition: 0.3s;
+        }
+        button#spinBtn:hover:not(:disabled) { transform: translateY(-4px); box-shadow: 0 15px 30px #00ff8844; }
+        button#spinBtn:disabled { background: #1a2035; color: #445; cursor: not-allowed; transform: none; }
+
+        .back-link { display: inline-block; margin-top: 30px; color: #556; text-decoration: none; font-size: 0.8rem; font-weight: 700; transition: 0.3s; }
+        .back-link:hover { color: #00ff88; }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">⬡ NeonCasino</a>
+    <div class="wallet">
+        <span>🪙</span>
+        <span class="wallet-amount" id="balanceDisplay">0 PKT</span>
+    </div>
+</header>
+
+<div class="game-container">
+    <div class="slot-machine">
+        <div class="viewport">
+            <div class="reel-window"><div class="reel-strip" id="strip1"></div></div>
+            <div class="reel-window"><div class="reel-strip" id="strip2"></div></div>
+            <div class="reel-window"><div class="reel-strip" id="strip3"></div></div>
+        </div>
+        <div class="win-display" id="winMsg"></div>
+    </div>
+
+    <div class="controls">
+        <input type="number" class="bet-input" id="betAmount" value="100" min="10">
+        <button id="spinBtn">ZAKRĘĆ</button>
+    </div>
+
+    <a href="index.html" class="back-link">← POWRÓT DO LOBBY</a>
+</div>
+
+<script>
+    const BAL_KEY = 'casino_balance';
+    let balance = parseInt(localStorage.getItem(BAL_KEY) || '25000');
+    
+    const symbols = ['🍒', '🍋', '🍇', '🔔', '💎', '7️⃣'];
+    const multipliers = { '🍒': 5, '🍋': 10, '🍇': 15, '🔔': 25, '💎': 50, '7️⃣': 100 };
+    const SYMBOL_HEIGHT = 160; // Wysokość symbolu musi pasować do CSS
+
+    function updateBalance(amt) {
+        balance += amt;
+        localStorage.setItem(BAL_KEY, balance);
+        document.getElementById('balanceDisplay').textContent = balance.toLocaleString() + ' PKT';
+    }
+    updateBalance(0);
+
+    const strips = [
+        document.getElementById('strip1'),
+        document.getElementById('strip2'),
+        document.getElementById('strip3')
+    ];
+
+    // Inicjalizacja bębnów - ustawia losowe symbole na środku
+    strips.forEach(s => {
+        let content = '';
+        const sym = symbols[Math.floor(Math.random() * symbols.length)];
+        // Tworzymy taśmę, ale ustawiamy ją tak, by pierwszy symbol był na środku
+        content += `<div class="symbol">${sym}</div>`;
+        for(let i=0; i<30; i++) {
+            content += `<div class="symbol">${symbols[Math.floor(Math.random() * symbols.length)]}</div>`;
+        }
+        s.innerHTML = content;
+        s.style.transform = `translateY(0px)`; // Pierwszy symbol na środku
+    });
+
+    async function spin() {
+        const bet = parseInt(document.getElementById('betAmount').value);
+        if (bet > balance || bet <= 0) return alert("Brak środków!");
+
+        updateBalance(-bet);
+        const btn = document.getElementById('spinBtn');
+        const winMsg = document.getElementById('winMsg');
+        btn.disabled = true;
+        winMsg.textContent = "";
+
+        const results = [];
+        const spinRounds = 15; // Ile symboli "przewijamy" (w tym wynik)
+
+        strips.forEach((strip, i) => {
+            const targetIdx = Math.floor(Math.random() * symbols.length);
+            results[i] = symbols[targetIdx];
+
+            let stripContent = '';
+            // 1. Zaczynamy od losowych symboli
+            for(let j=0; j<spinRounds; j++) {
+                stripContent += `<div class="symbol">${symbols[Math.floor(Math.random()*symbols.length)]}</div>`;
+            }
+            // 2. Ostatni symbol, który ma zostać na środku
+            stripContent += `<div class="symbol">${results[i]}</div>`;
+            // 3. Dodatkowy zapas na dole, żeby nie było widać końca taśmy podczas hamowania
+            stripContent += `<div class="symbol">${symbols[0]}</div>`; 
+
+            strip.innerHTML = stripContent;
+            
+            // Reset pozycji bez animacji
+            strip.style.transition = 'none';
+            strip.style.transform = `translateY(0px)`;
+
+            // Uruchomienie animacji z kaskadowym opóźnieniem
+            setTimeout(() => {
+                // cubic-bezier(0.12, 0.84, 0.22, 1.05) - płynne hamowanie z lekkim odbiciem
+                strip.style.transition = `transform ${2.5 + i * 0.5}s cubic-bezier(0.12, 0.84, 0.22, 1.05)`;
+                // Obliczamy przesunięcie tak, żeby results[i] (czyli przedostatni symbol) trafił idealnie w okienko
+                const offset = spinRounds * SYMBOL_HEIGHT;
+                strip.style.transform = `translateY(-${offset}px)`;
+            }, 50);
+        });
+
+        // Czekamy na zatrzymanie ostatniego bębnna (3.0s + zapas)
+        setTimeout(() => {
+            checkWin(results, bet);
+            btn.disabled = false;
+        }, 3600);
+    }
+
+    function checkWin(res, bet) {
+        const winMsg = document.getElementById('winMsg');
+        if (res[0] === res[1] && res[1] === res[2]) {
+            const winAmt = bet * multipliers[res[0]];
+            updateBalance(winAmt);
+            winMsg.textContent = `JACKPOT! +${winAmt}`;
+            winMsg.style.color = "#00ff88";
+        } else if (res[0] === res[1] || res[1] === res[2]) {
+            const winAmt = Math.floor(bet * 1.5);
+            updateBalance(winAmt);
+            winMsg.textContent = `PARA! +${winAmt}`;
+            winMsg.style.color = "#ffaa00";
+        } else {
+            winMsg.textContent = "LOSUJ DALEJ";
+            winMsg.style.color = "#ff3355";
+        }
+    }
+
+    document.getElementById('spinBtn').onclick = spin;
+</script>
+</body>
+</html>

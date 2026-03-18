@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Collect – NeonCasino</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #070a11; color: #e0e0e0; font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden; }
+        
+        header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; border-bottom: 1px solid #1a2035; background: #0a0e17; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: #ffaa00; text-decoration: none; letter-spacing: 2px; }
+        .wallet { background: #111827; border: 1px solid #1e2d40; border-radius: 10px; padding: 8px 16px; display: flex; align-items: center; gap: 10px; }
+        .wallet-amount { font-weight: 700; color: #ffaa00; }
+
+        .game-container { max-width: 900px; margin: 30px auto; text-align: center; padding: 0 10px; }
+
+        /* --- SLOT MACHINE --- */
+        .slot-machine {
+            background: linear-gradient(180deg, #1a2535 0%, #0a0e17 100%);
+            border: 4px solid #2a3545; border-radius: 20px;
+            padding: 20px; box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        .grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;
+            background: #05070a; padding: 15px; border-radius: 10px;
+            border: 2px solid #1a2535; height: 350px; overflow: hidden;
+        }
+
+        .reel { position: relative; height: 100%; display: flex; flex-direction: column; gap: 10px; transition: transform 0.5s; }
+
+        .cell {
+            height: 100px; min-height: 100px; background: #0d121d;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; position: relative; border: 1px solid #1a2535;
+        }
+
+        /* Moneta Cash */
+        .coin {
+            width: 80px; height: 80px; background: radial-gradient(circle, #ffaa00, #cc8800);
+            border-radius: 50%; border: 3px solid #ffee00;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-size: 0.8rem; font-weight: 900; color: #fff; box-shadow: 0 0 15px #ffaa0066;
+            animation: pulse 1.5s infinite;
+        }
+        .coin span { font-size: 1.1rem; }
+
+        /* Symbol Collect */
+        .collect-sym {
+            background: #ff0055; color: white; padding: 5px; border-radius: 5px;
+            font-size: 1rem; font-weight: 900; box-shadow: 0 0 20px #ff0055aa;
+            border: 2px solid #fff; animation: glow 1s infinite alternate;
+        }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes glow { from { box-shadow: 0 0 10px #ff0055; } to { box-shadow: 0 0 25px #ff0055; } }
+
+        /* --- UI --- */
+        .info-panel { height: 60px; margin: 20px 0; display: flex; align-items: center; justify-content: center; }
+        #winMsg { font-size: 2rem; font-weight: 900; color: #ffaa00; text-shadow: 0 0 20px rgba(255,170,0,0.4); }
+
+        .controls { display: flex; gap: 20px; justify-content: center; align-items: center; background: #111827; padding: 20px; border-radius: 15px; border: 1px solid #1a2535; }
+        .bet-box { display: flex; flex-direction: column; gap: 5px; }
+        .bet-input { background: #0a0e17; border: 2px solid #1a2535; color: #fff; padding: 12px; border-radius: 10px; width: 120px; text-align: center; font-weight: 800; }
+        
+        button#spinBtn {
+            background: #ffaa00; color: #0a0e17; border: none; padding: 15px 50px; border-radius: 12px;
+            font-size: 1.5rem; font-weight: 900; cursor: pointer; transition: 0.2s;
+        }
+        button#spinBtn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 10px 20px #ffaa0044; }
+        button#spinBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .back-link { display: inline-block; margin-top: 20px; color: #556; text-decoration: none; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">💰 CASH COLLECT</a>
+    <div class="wallet">
+        <span>🪙</span>
+        <span class="wallet-amount" id="balanceDisplay">0 PKT</span>
+    </div>
+</header>
+
+<div class="game-container">
+    <div class="slot-machine">
+        <div class="grid" id="slotGrid">
+            </div>
+    </div>
+
+    <div class="info-panel">
+        <div id="winMsg"></div>
+    </div>
+
+    <div class="controls">
+        <div class="bet-box">
+            <span style="font-size: 0.7rem; color: #556;">STAWKA</span>
+            <input type="number" class="bet-input" id="betAmount" value="100" min="10">
+        </div>
+        <button id="spinBtn">ZAKRĘĆ</button>
+    </div>
+
+    <a href="index.html" class="back-link">← POWRÓT DO LOBBY</a>
+</div>
+
+<script>
+    const BAL_KEY = 'casino_balance';
+    let balance = parseInt(localStorage.getItem(BAL_KEY) || '25000');
+    const symbols = ['💎', '🍋', '🍒', '🔔', '🍉', '🍇'];
+
+    function updateBalance(amt) {
+        balance += amt;
+        localStorage.setItem(BAL_KEY, balance);
+        document.getElementById('balanceDisplay').textContent = balance.toLocaleString() + ' PKT';
+    }
+    updateBalance(0);
+
+    const grid = document.getElementById('slotGrid');
+
+    // Inicjalizacja pustej siatki
+    function init() {
+        grid.innerHTML = '';
+        for(let i=0; i<5; i++) {
+            const reel = document.createElement('div');
+            reel.className = 'reel';
+            for(let j=0; j<3; j++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.textContent = symbols[Math.floor(Math.random()*symbols.length)];
+                reel.appendChild(cell);
+            }
+            grid.appendChild(reel);
+        }
+    }
+    init();
+
+    async function spin() {
+        const bet = parseInt(document.getElementById('betAmount').value);
+        if (bet > balance || bet <= 0) return alert("Brak środków!");
+
+        updateBalance(-bet);
+        const btn = document.getElementById('spinBtn');
+        const winMsg = document.getElementById('winMsg');
+        btn.disabled = true;
+        winMsg.textContent = "";
+
+        // Losowanie wyników (siatka 5x3)
+        const results = [];
+        const reels = document.querySelectorAll('.reel');
+
+        for (let x = 0; x < 5; x++) {
+            results[x] = [];
+            // Animacja "przeskakiwania"
+            let counter = 0;
+            const interval = setInterval(() => {
+                reels[x].childNodes.forEach(cell => {
+                    cell.innerHTML = symbols[Math.floor(Math.random()*symbols.length)];
+                });
+                counter++;
+                if(counter > 15) clearInterval(interval);
+            }, 50);
+
+            // Ustalanie końcowego wyniku dla bębna
+            setTimeout(() => {
+                let hasCollectOnLastReel = false;
+                reels[x].innerHTML = ''; // Czyścimy bęben
+                
+                for (let y = 0; y < 3; y++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    
+                    const rand = Math.random();
+                    // Mechanika Cash Collect:
+                    // Monety na bębnach 1-4
+                    if (x < 4 && rand < 0.15) {
+                        const coinVal = [1, 2, 5, 10, 50][Math.floor(Math.random()*5)] * bet;
+                        cell.innerHTML = `<div class="coin">CASH<span>${coinVal}</span></div>`;
+                        results[x][y] = { type: 'coin', val: coinVal };
+                    } 
+                    // Collect tylko na bębnie 5
+                    else if (x === 4 && rand < 0.25 && !hasCollectOnLastReel) {
+                        cell.innerHTML = `<div class="collect-sym">CASH<br>COLLECT</div>`;
+                        results[x][y] = { type: 'collect' };
+                        hasCollectOnLastReel = true;
+                    } 
+                    // Zwykły symbol
+                    else {
+                        const sym = symbols[Math.floor(Math.random()*symbols.length)];
+                        cell.textContent = sym;
+                        results[x][y] = { type: 'sym', val: sym };
+                    }
+                    reels[x].appendChild(cell);
+                }
+            }, 500 + (x * 300));
+        }
+
+        // Sprawdzanie wygranej po zatrzymaniu bębna 5
+        setTimeout(() => {
+            let totalCollect = 0;
+            let collectFound = results[4].some(cell => cell && cell.type === 'collect');
+
+            if (collectFound) {
+                // Sumuj monety z bębnów 1-4
+                for(let i=0; i<4; i++) {
+                    results[i].forEach(cell => {
+                        if(cell.type === 'coin') totalCollect += cell.val;
+                    });
+                }
+            }
+
+            if (totalCollect > 0) {
+                updateBalance(totalCollect);
+                winMsg.textContent = `COLLECTED: +${totalCollect} PKT!`;
+                // Efekt wizualny wygranej
+                document.querySelectorAll('.coin').forEach(c => c.style.boxShadow = "0 0 30px #ffee00");
+            } else if (collectFound) {
+                winMsg.textContent = "NO COINS TO COLLECT";
+            } else {
+                winMsg.textContent = "";
+            }
+
+            btn.disabled = false;
+        }, 2200);
+    }
+
+    document.getElementById('spinBtn').onclick = spin;
+</script>
+</body>
+</html>

@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lil Demon – NeonCasino</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0e17;
+      color: #e0e0e0;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 28px;
+      border-bottom: 1px solid #1a2035;
+    }
+    .logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #00ff88;
+      text-decoration: none;
+    }
+    .wallet {
+      display: flex; align-items: center; gap: 10px;
+      background: #111827; border: 1px solid #1e2d40;
+      border-radius: 10px; padding: 9px 16px;
+    }
+    .wallet-label { font-size: .68rem; color: #556; text-transform: uppercase; letter-spacing: 1px; }
+    .wallet-amount { font-size: 1rem; font-weight: 700; color: #00ff88; font-family: 'JetBrains Mono', monospace; }
+
+    /* ── GAME WRAPPER ── */
+    .game-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 28px 20px;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    /* ── TITLE ── */
+    .game-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #ff3355;
+      text-shadow: 0 0 20px #ff335580, 0 0 40px #ff335530;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+    .game-subtitle {
+      font-size: .72rem;
+      letter-spacing: 3px;
+      color: #445566;
+      text-transform: uppercase;
+      margin-top: -14px;
+    }
+
+    /* ── REELS MACHINE ── */
+    .machine {
+      background: linear-gradient(160deg, #12192a 0%, #0d1220 100%);
+      border: 2px solid #1e2d40;
+      border-radius: 20px;
+      padding: 24px;
+      width: 100%;
+      box-shadow: 0 0 40px #ff335510, inset 0 0 30px #00000040;
+      position: relative;
+    }
+
+    /* top glow bar */
+    .machine::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #ff3355, transparent);
+      border-radius: 2px;
+    }
+
+    .reels-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    /* ── SINGLE REEL ── */
+    .reel-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .reel-label {
+      font-size: .6rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #334;
+    }
+
+    .reel {
+      width: 130px;
+      height: 130px;
+      background: #080c14;
+      border: 1px solid #1a2535;
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* shine overlay */
+    .reel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,.04) 0%, transparent 40%, transparent 60%, rgba(0,0,0,.3) 100%);
+      pointer-events: none;
+      z-index: 2;
+      border-radius: 14px;
+    }
+
+    .reel-inner {
+      display: flex;
+      flex-direction: column;
+      transition: transform .0s;
+      will-change: transform;
+    }
+
+    .reel-cell {
+      width: 130px;
+      height: 130px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .reel-cell.lit {
+      filter: drop-shadow(0 0 12px currentColor);
+    }
+
+    /* ── BONUS METER (bubble above reel) ── */
+    .bonus-meter {
+      width: 130px;
+      height: 28px;
+      background: #0d1220;
+      border: 1px solid #1a2535;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bonus-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 8px;
+      transition: width .4s ease;
+    }
+
+    .bonus-fill.r0 { background: linear-gradient(90deg, #ff3355, #ff6688); }
+    .bonus-fill.r1 { background: linear-gradient(90deg, #aa00ff, #cc44ff); }
+    .bonus-fill.r2 { background: linear-gradient(90deg, #ff8800, #ffbb44); }
+
+    .bonus-meter-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .6rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #fff;
+      text-shadow: 0 1px 3px #000;
+      pointer-events: none;
+    }
+
+    /* ── WIN LINE ── */
+    .win-line {
+      position: absolute;
+      left: 0; right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #00ff88, transparent);
+      opacity: 0;
+      transition: opacity .3s;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .win-line.active { opacity: 1; }
+
+    /* ── PAYLINE DISPLAY ── */
+    .payline-display {
+      text-align: center;
+      min-height: 28px;
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #445566;
+    }
+    .payline-display.win { color: #00ff88; text-shadow: 0 0 10px #00ff8860; }
+    .payline-display.big-win { color: #ffd700; text-shadow: 0 0 16px #ffd70080; font-size: 1rem; }
+    .payline-display.bonus { color: #ff3355; text-shadow: 0 0 16px #ff335580; }
+
+    /* ── CONTROLS ── */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .bet-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bet-label {
+      font-size: .68rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #445566;
+      white-space: nowrap;
+    }
+
+    .bet-input {
+      flex: 1;
+      background: #0d1220;
+      border: 1px solid #1e2d40;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .bet-input:focus { border-color: #ff335566; }
+
+    .bet-quick {
+      display: flex;
+      gap: 6px;
+    }
+
+    .bet-quick button {
+      padding: 8px 12px;
+      background: #111827;
+      border: 1px solid #1e2d40;
+      border-radius: 8px;
+      color: #667;
+      font-size: .72rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color .2s, color .2s;
+    }
+    .bet-quick button:hover { border-color: #ff335566; color: #ff3355; }
+
+    #spinBtn {
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, #cc0033, #ff3355);
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 4px 20px #ff335540;
+      transition: opacity .2s, transform .1s, box-shadow .2s;
+    }
+    #spinBtn:hover:not(:disabled) {
+      opacity: .9;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px #ff335560;
+    }
+    #spinBtn:active:not(:disabled) { transform: translateY(0); }
+    #spinBtn:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
+
+    .btn-back {
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      border: 1px solid #1e2d40;
+      border-radius: 10px;
+      color: #556;
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      transition: border-color .2s, color .2s;
+    }
+    .btn-back:hover { border-color: #334; color: #aab; }
+
+    /* ── PAYTABLE ── */
+    .paytable {
+      width: 100%;
+      background: #111827;
+      border: 1px solid #1a2535;
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .paytable-title {
+      font-size: .65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #445566;
+      margin-bottom: 12px;
+    }
+    .pay-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #0f1825;
+      font-size: .8rem;
+    }
+    .pay-row:last-child { border-bottom: none; }
+    .pay-syms { font-size: 1.1rem; letter-spacing: 2px; }
+    .pay-mult { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #00ff88; }
+
+    /* ── HISTORY ── */
+    .history-wrap {
+      width: 100%;
+      background: #111827;
+      border: 1px solid #1a2535;
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .history-title {
+      font-size: .65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #445566;
+      margin-bottom: 10px;
+    }
+    .history-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .h-pill {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: .72rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .h-pill.loss  { background: #1a0a0a; color: #ff3355; border: 1px solid #ff335530; }
+    .h-pill.small { background: #0a1220; color: #00aaff; border: 1px solid #00aaff30; }
+    .h-pill.big   { background: #0a1f14; color: #00ff88; border: 1px solid #00ff8830; }
+    .h-pill.bonus { background: #1a0a1f; color: #cc44ff; border: 1px solid #cc44ff30; }
+
+    /* ── DEMON OVERLAY ── */
+    #demonOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 6, 14, .92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .4s;
+      gap: 0;
+    }
+    #demonOverlay.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* demon header */
+    .demon-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .demon-emoji {
+      font-size: 5rem;
+      animation: demonBounce 0.55s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 28px #ff3355);
+      line-height: 1;
+    }
+    @keyframes demonBounce {
+      from { transform: translateY(0) scale(1) rotate(-3deg); }
+      to   { transform: translateY(-10px) scale(1.08) rotate(3deg); }
+    }
+    .demon-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #ff3355;
+      text-shadow: 0 0 30px #ff3355, 0 0 60px #ff335540;
+      letter-spacing: 5px;
+      margin-top: 10px;
+    }
+    .demon-subtitle {
+      font-size: .78rem;
+      color: #cc44ff;
+      letter-spacing: 2px;
+      margin-top: 5px;
+      text-align: center;
+    }
+    .demon-picks-left {
+      font-size: .68rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #ff3355;
+      margin-top: 4px;
+      font-weight: 700;
+    }
+
+    /* 3×3 grid */
+    .demon-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 110px);
+      grid-template-rows: repeat(3, 110px);
+      gap: 12px;
+    }
+
+    .demon-tile {
+      width: 110px;
+      height: 110px;
+      border-radius: 16px;
+      cursor: pointer;
+      position: relative;
+      perspective: 600px;
+    }
+
+    /* flip card inner */
+    .tile-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform .5s cubic-bezier(.4,0,.2,1);
+      border-radius: 16px;
+    }
+    .demon-tile.flipped .tile-inner {
+      transform: rotateY(180deg);
+    }
+
+    /* front (hidden) */
+    .tile-front, .tile-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 16px;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .tile-front {
+      background: linear-gradient(135deg, #1a0a2a, #12192a);
+      border: 2px solid #ff335540;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .demon-tile:not(.flipped):hover .tile-front {
+      border-color: #ff3355;
+      box-shadow: 0 0 20px #ff335540, inset 0 0 10px #ff335510;
+    }
+    .tile-front-icon { font-size: 2.4rem; animation: tileFloat .8s ease-in-out infinite alternate; }
+    .demon-tile:nth-child(2) .tile-front-icon { animation-delay: .1s; }
+    .demon-tile:nth-child(3) .tile-front-icon { animation-delay: .2s; }
+    .demon-tile:nth-child(4) .tile-front-icon { animation-delay: .3s; }
+    .demon-tile:nth-child(5) .tile-front-icon { animation-delay: .4s; }
+    .demon-tile:nth-child(6) .tile-front-icon { animation-delay: .5s; }
+    .demon-tile:nth-child(7) .tile-front-icon { animation-delay: .6s; }
+    .demon-tile:nth-child(8) .tile-front-icon { animation-delay: .7s; }
+    .demon-tile:nth-child(9) .tile-front-icon { animation-delay: .8s; }
+    @keyframes tileFloat {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-5px); }
+    }
+    .tile-front-label {
+      font-size: .6rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #445566;
+    }
+
+    /* back (revealed) */
+    .tile-back {
+      transform: rotateY(180deg);
+      border: 2px solid transparent;
+    }
+    .tile-back.type-collect  { background: linear-gradient(135deg, #0a1f14, #0d2018); border-color: #00ff8866; }
+    .tile-back.type-multiply { background: linear-gradient(135deg, #1a0a2a, #1a0d2a); border-color: #cc44ff66; }
+    .tile-back.type-mega     { background: linear-gradient(135deg, #1f1000, #1a0d00); border-color: #ffd70066; }
+
+    .tile-back-icon { font-size: 2rem; }
+    .tile-back-name {
+      font-size: .6rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .type-collect  .tile-back-name { color: #00ff88; }
+    .type-multiply .tile-back-name { color: #cc44ff; }
+    .type-mega     .tile-back-name { color: #ffd700; }
+
+    .tile-back-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+    .type-collect  .tile-back-value { color: #00ff88; text-shadow: 0 0 8px #00ff8860; }
+    .type-multiply .tile-back-value { color: #cc44ff; text-shadow: 0 0 8px #cc44ff60; }
+    .type-mega     .tile-back-value { color: #ffd700; text-shadow: 0 0 8px #ffd70060; }
+
+    /* selected glow pulse */
+    .demon-tile.selected .tile-back {
+      animation: selectedPulse .6s ease-in-out infinite alternate;
+    }
+    @keyframes selectedPulse {
+      from { box-shadow: 0 0 10px currentColor; }
+      to   { box-shadow: 0 0 28px currentColor; }
+    }
+
+    /* disabled (not picked, game over) */
+    .demon-tile.disabled .tile-front {
+      opacity: .3;
+      cursor: default;
+    }
+
+    /* ── WIN POPUP ── */
+    #winPopup {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      pointer-events: none;
+    }
+    .win-popup-inner {
+      background: linear-gradient(135deg, #12192a, #0d1220);
+      border: 2px solid #00ff88;
+      border-radius: 20px;
+      padding: 32px 48px;
+      text-align: center;
+      box-shadow: 0 0 60px #00ff8840;
+      transform: scale(0);
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .win-popup-inner.show { transform: scale(1); }
+    .win-popup-inner.demon-win { border-color: #ff3355; box-shadow: 0 0 60px #ff335540; }
+    .win-popup-label { font-size: .72rem; letter-spacing: 3px; text-transform: uppercase; color: #445566; }
+    .win-popup-amount {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 3rem;
+      font-weight: 800;
+      color: #00ff88;
+      text-shadow: 0 0 20px #00ff8880;
+      margin: 8px 0;
+    }
+    .win-popup-amount.demon-color { color: #ff3355; text-shadow: 0 0 20px #ff335580; }
+    .win-popup-sub { font-size: .8rem; color: #556; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: #00ff88; color: #0a0e17;
+      padding: 11px 26px; border-radius: 10px;
+      font-weight: 800; font-size: .88rem; letter-spacing: 1px;
+      opacity: 0; transition: opacity .3s, transform .3s;
+      pointer-events: none; z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── MULTIPLIER BADGE (floats up from reel) ── */
+    .float-badge {
+      position: fixed;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #ffd700;
+      text-shadow: 0 0 10px #ffd70080;
+      pointer-events: none;
+      z-index: 400;
+      animation: floatUp .9s ease-out forwards;
+    }
+    @keyframes floatUp {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to   { opacity: 0; transform: translateY(-60px) scale(1.3); }
+    }
+
+    /* ── REEL GLOW ON WIN ── */
+    .reel.glow-win {
+      box-shadow: 0 0 20px #00ff8860, inset 0 0 10px #00ff8820;
+      border-color: #00ff8866;
+    }
+    .reel.glow-bonus {
+      box-shadow: 0 0 20px #ff335560, inset 0 0 10px #ff335520;
+      border-color: #ff335566;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">⬡ NeonCasino</a>
+  <div class="wallet">
+    <span>🪙</span>
+    <div>
+      <div class="wallet-label">Saldo</div>
+      <div class="wallet-amount" id="balanceDisplay">0 PKT</div>
+    </div>
+  </div>
+</header>
+
+<div class="game-wrap">
+  <div class="game-title">😈 Lil Demon</div>
+  <div class="game-subtitle">Bonus Slots</div>
+
+  <!-- MACHINE -->
+  <div class="machine">
+    <div class="reels-row" id="reelsRow">
+      <!-- 3 reels injected by JS -->
+    </div>
+    <div class="win-line" id="winLine"></div>
+    <div class="payline-display" id="paylineDisplay">Postaw i zakręć!</div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <div class="bet-row">
+      <span class="bet-label">Stawka</span>
+      <input class="bet-input" type="number" id="betInput" min="1" value="50" />
+      <div class="bet-quick">
+        <button onclick="setBet(50)">50</button>
+        <button onclick="setBet(100)">100</button>
+        <button onclick="setBet(500)">500</button>
+      </div>
+    </div>
+    <button id="spinBtn">🎰 ZAKRĘĆ</button>
+    <a class="btn-back" href="index.html">← Powrót do Lobby</a>
+  </div>
+
+  <!-- PAYTABLE -->
+  <div class="paytable">
+    <div class="paytable-title">Tabela wypłat (× stawka)</div>
+    <div class="pay-row"><span class="pay-syms">😈😈😈</span><span class="pay-mult">×50</span></div>
+    <div class="pay-row"><span class="pay-syms">💎💎💎</span><span class="pay-mult">×20</span></div>
+    <div class="pay-row"><span class="pay-syms">🔥🔥🔥</span><span class="pay-mult">×15</span></div>
+    <div class="pay-row"><span class="pay-syms">⚡⚡⚡</span><span class="pay-mult">×10</span></div>
+    <div class="pay-row"><span class="pay-syms">🍒🍒🍒</span><span class="pay-mult">×5</span></div>
+    <div class="pay-row"><span class="pay-syms">🍋🍋🍋</span><span class="pay-mult">×3</span></div>
+    <div class="pay-row"><span class="pay-syms">🍇🍇🍇</span><span class="pay-mult">×2</span></div>
+    <div class="pay-row"><span class="pay-syms">Dowolne 2 jednakowe</span><span class="pay-mult">×0.5</span></div>
+    <div class="pay-row"><span class="pay-syms">💣 BONUS (bęben)</span><span class="pay-mult" style="color:#ff3355">Demon!</span></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-wrap">
+    <div class="history-title">Ostatnie wyniki</div>
+    <div class="history-pills" id="historyPills"></div>
+  </div>
+</div>
+
+<!-- DEMON OVERLAY -->
+<div id="demonOverlay">
+  <div class="demon-header">
+    <div class="demon-emoji">😈</div>
+    <div class="demon-title">LIL DEMON!</div>
+    <div class="demon-subtitle" id="demonSubtitle">Odkryj 3 kafelki i zbierz nagrody!</div>
+    <div class="demon-picks-left" id="demonPicksLeft">ZOSTAŁO WYBORÓW: 3</div>
+  </div>
+  <div class="demon-grid" id="demonGrid">
+    <!-- 9 tiles injected by JS -->
+  </div>
+</div>
+
+<!-- WIN POPUP -->
+<div id="winPopup">
+  <div class="win-popup-inner" id="winPopupInner">
+    <div class="win-popup-label" id="winPopupLabel">WYGRANA</div>
+    <div class="win-popup-amount" id="winPopupAmount">+0 PKT</div>
+    <div class="win-popup-sub" id="winPopupSub"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── BALANCE ──
+const BAL_KEY    = 'casino_balance';
+const getBalance = () => parseInt(localStorage.getItem(BAL_KEY) || '25000', 10);
+const setBalance = v  => { localStorage.setItem(BAL_KEY, String(v)); renderBalance(); };
+const renderBalance = () => {
+  document.getElementById('balanceDisplay').textContent =
+    getBalance().toLocaleString('pl-PL') + ' PKT';
+};
+renderBalance();
+
+function setBet(v) { document.getElementById('betInput').value = v; }
+
+// ── SYMBOLS ──
+// weight: higher = more common
+const SYMBOLS = [
+  { s: '🍇', w: 18, mult3: 2  },
+  { s: '🍋', w: 16, mult3: 3  },
+  { s: '🍒', w: 14, mult3: 5  },
+  { s: '⚡', w: 10, mult3: 10 },
+  { s: '🔥', w: 8,  mult3: 15 },
+  { s: '💎', w: 5,  mult3: 20 },
+  { s: '😈', w: 3,  mult3: 50 },
+  { s: '💣', w: 4,  mult3: 0, isBonus: true }, // bonus trigger
+];
+
+// build weighted pool
+const POOL = [];
+SYMBOLS.forEach(sym => { for (let i = 0; i < sym.w; i++) POOL.push(sym); });
+
+function randSym() { return POOL[Math.floor(Math.random() * POOL.length)]; }
+
+// ── REEL STATE ──
+// Each reel has a "bonus meter" that fills up over spins
+// When it hits 100% it "pops" and triggers demon bonus
+const NUM_REELS = 3;
+const reelMeta = [
+  { fill: 0, threshold: 0, color: 'r0' }, // red
+  { fill: 0, threshold: 0, color: 'r1' }, // purple
+  { fill: 0, threshold: 0, color: 'r2' }, // orange
+];
+
+// randomize initial thresholds (how many spins until demon pops)
+function resetThreshold(i) {
+  reelMeta[i].threshold = 120 + Math.floor(Math.random() * 80); // 120-200 spins worth of fill
+  reelMeta[i].fill = 0;
+}
+reelMeta.forEach((_, i) => resetThreshold(i));
+
+// ── BUILD REELS DOM ──
+const reelsRow = document.getElementById('reelsRow');
+const reelEls  = []; // { wrap, inner, meter, meterFill, meterLabel }
+
+for (let i = 0; i < NUM_REELS; i++) {
+  const wrap = document.createElement('div');
+  wrap.className = 'reel-wrap';
+
+  // bonus meter on top
+  const meter = document.createElement('div');
+  meter.className = 'bonus-meter';
+  const fill = document.createElement('div');
+  fill.className = `bonus-fill ${reelMeta[i].color}`;
+  const mlabel = document.createElement('div');
+  mlabel.className = 'bonus-meter-label';
+  mlabel.textContent = 'DEMON METER';
+  meter.appendChild(fill);
+  meter.appendChild(mlabel);
+
+  const reelDiv = document.createElement('div');
+  reelDiv.className = 'reel';
+  reelDiv.id = `reel${i}`;
+
+  const inner = document.createElement('div');
+  inner.className = 'reel-inner';
+  reelDiv.appendChild(inner);
+
+  const label = document.createElement('div');
+  label.className = 'reel-label';
+  label.textContent = ['BĘBEN 1', 'BĘBEN 2', 'BĘBEN 3'][i];
+
+  wrap.appendChild(meter);
+  wrap.appendChild(reelDiv);
+  wrap.appendChild(label);
+  reelsRow.appendChild(wrap);
+
+  reelEls.push({ wrap, reelDiv, inner, meter, fill, mlabel });
+}
+
+// ── SPIN ANIMATION ──
+// We simulate a strip of symbols scrolling, then snap to result
+const CELL_H = 130;
+const STRIP_COUNT = 20; // symbols in the virtual strip
+
+function buildStrip(inner, resultSym) {
+  inner.innerHTML = '';
+  // fill strip with random symbols, last one is the result
+  const strip = [];
+  for (let i = 0; i < STRIP_COUNT - 1; i++) strip.push(randSym());
+  strip.push(resultSym);
+
+  strip.forEach(sym => {
+    const cell = document.createElement('div');
+    cell.className = 'reel-cell';
+    cell.textContent = sym.s;
+    inner.appendChild(cell);
+  });
+
+  // start at top
+  inner.style.transition = 'none';
+  inner.style.transform = 'translateY(0)';
+  return strip;
+}
+
+function animateReel(inner, duration, delay) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      const targetY = -((STRIP_COUNT - 1) * CELL_H);
+      inner.style.transition = `transform ${duration}ms cubic-bezier(0.25, 0.1, 0.1, 1)`;
+      inner.style.transform = `translateY(${targetY}px)`;
+      setTimeout(resolve, duration);
+    }, delay);
+  });
+}
+
+// ── MAIN SPIN LOGIC ──
+let spinning = false;
+const spinBtn = document.getElementById('spinBtn');
+const paylineDisplay = document.getElementById('paylineDisplay');
+const winLine = document.getElementById('winLine');
+
+spinBtn.addEventListener('click', doSpin);
+
+async function doSpin() {
+  if (spinning) return;
+  const bet = parseInt(document.getElementById('betInput').value, 10);
+  if (!bet || bet < 1) return showToast('Podaj stawkę!', true);
+  if (bet > getBalance()) return showToast('Za mało PKT!', true);
+
+  spinning = true;
+  spinBtn.disabled = true;
+  setBalance(getBalance() - bet);
+
+  // clear previous state
+  winLine.classList.remove('active');
+  paylineDisplay.className = 'payline-display';
+  paylineDisplay.textContent = '...';
+  reelEls.forEach(r => { r.reelDiv.className = 'reel'; });
+
+  // draw results
+  const results = [randSym(), randSym(), randSym()];
+
+  // build strips and animate
+  const promises = reelEls.map((r, i) => {
+    const strip = buildStrip(r.inner, results[i]);
+    const dur   = 600 + i * 250;
+    const delay = i * 120;
+    return animateReel(r.inner, dur, delay);
+  });
+
+  await Promise.all(promises);
+
+  // ── EVALUATE RESULT ──
+  const syms = results.map(r => r.s);
+  const bonusCount = results.filter(r => r.isBonus).length;
+
+  // update bonus meters
+  let demonTriggered = false;
+  let demonReelIdx   = -1;
+
+  reelMeta.forEach((meta, i) => {
+    // bonus symbols fill meter faster
+    const fillAmt = results[i].isBonus ? 8 : (1 + Math.floor(Math.random() * 3));
+    meta.fill = Math.min(meta.fill + fillAmt, 100);
+
+    const pct = (meta.fill / meta.threshold) * 100;
+    reelEls[i].fill.style.width = Math.min(pct, 100) + '%';
+    reelEls[i].mlabel.textContent = Math.min(Math.round(pct), 100) + '%';
+
+    if (meta.fill >= meta.threshold && !demonTriggered) {
+      demonTriggered = true;
+      demonReelIdx   = i;
+    }
+  });
+
+  // ── CALCULATE WIN ──
+  let win = 0;
+  let winType = 'none';
+  let winLabel = '';
+
+  if (!bonusCount) {
+    // check 3-of-a-kind
+    if (syms[0] === syms[1] && syms[1] === syms[2]) {
+      const sym = results[0];
+      win = Math.floor(bet * sym.mult3);
+      winType = sym.mult3 >= 20 ? 'big' : 'small';
+      winLabel = `${sym.s}${sym.s}${sym.s} × ${sym.mult3} = +${win.toLocaleString('pl-PL')} PKT`;
+    }
+    // check 2-of-a-kind
+    else if (syms[0] === syms[1] || syms[1] === syms[2] || syms[0] === syms[2]) {
+      win = Math.floor(bet * 0.5);
+      winType = 'small';
+      winLabel = `Para! +${win.toLocaleString('pl-PL')} PKT`;
+    }
+  }
+
+  // apply win
+  if (win > 0) {
+    setBalance(getBalance() + win);
+    winLine.classList.add('active');
+    reelEls.forEach(r => r.reelDiv.classList.add('glow-win'));
+    paylineDisplay.className = 'payline-display ' + (winType === 'big' ? 'big-win' : 'win');
+    paylineDisplay.textContent = winLabel;
+    showWinPopup(win, false, winType === 'big' ? 'WIELKA WYGRANA!' : 'WYGRANA');
+  } else if (!bonusCount) {
+    paylineDisplay.textContent = 'Brak wygranej';
+  }
+
+  addHistory(win, bonusCount > 0);
+
+  // ── DEMON TRIGGER ──
+  if (demonTriggered) {
+    reelEls[demonReelIdx].reelDiv.classList.add('glow-bonus');
+    paylineDisplay.className = 'payline-display bonus';
+    paylineDisplay.textContent = '😈 DEMON METER PEŁNY!';
+    resetThreshold(demonReelIdx);
+    reelMeta[demonReelIdx].fill = 0;
+    reelEls[demonReelIdx].fill.style.width = '0%';
+    reelEls[demonReelIdx].mlabel.textContent = '0%';
+
+    await sleep(800);
+    showDemonOverlay(bet, demonReelIdx);
+    return; // spinning re-enabled after demon choice
+  }
+
+  spinning = false;
+  spinBtn.disabled = false;
+}
+
+// ── DEMON OVERLAY — 3×3 GRID ──
+const demonOverlay  = document.getElementById('demonOverlay');
+const demonGrid     = document.getElementById('demonGrid');
+const demonSubtitle = document.getElementById('demonSubtitle');
+const demonPicksLeft = document.getElementById('demonPicksLeft');
+
+// Bonus pool for tiles
+const TILE_TYPES = [
+  { type: 'collect',  icon: '💰', name: 'COLLECT',      color: 'type-collect',  multMin: 3,  multMax: 12 },
+  { type: 'multiply', icon: '✖️',  name: 'MULTIPLY',     color: 'type-multiply', multMin: 2,  multMax: 20 },
+  { type: 'mega',     icon: '💎', name: 'MEGA COLLECT',  color: 'type-mega',     multMin: 15, multMax: 40 },
+];
+
+function randTileBonus() {
+  // weighted: collect 50%, multiply 35%, mega 15%
+  const r = Math.random();
+  const t = r < 0.5 ? TILE_TYPES[0] : r < 0.85 ? TILE_TYPES[1] : TILE_TYPES[2];
+  const mult = t.multMin + Math.floor(Math.random() * (t.multMax - t.multMin + 1));
+  return { ...t, mult };
+}
+
+let demonBet = 0;
+let demonFlipped = []; // { type, mult, prize }
+let demonDone = false;
+
+function showDemonOverlay(bet, reelIdx) {
+  demonBet = bet;
+  demonFlipped = [];
+  demonDone = false;
+
+  demonSubtitle.textContent = `Bęben ${reelIdx + 1} eksplodował! Zbierz 3 jednakowe!`;
+  demonPicksLeft.textContent = 'ODKRYJ KAFELKI — POTRZEBUJESZ 3 JEDNAKOWYCH';
+
+  // guarantee at least one winning combo is possible:
+  // place exactly 3 of one random type somewhere in the 9 tiles
+  const winType = TILE_TYPES[Math.floor(Math.random() * TILE_TYPES.length)];
+  // build pool: 3 guaranteed of winType + 6 random (may accidentally add more, that's fine)
+  const pool = [];
+  for (let i = 0; i < 3; i++) {
+    const mult = winType.multMin + Math.floor(Math.random() * (winType.multMax - winType.multMin + 1));
+    pool.push({ ...winType, mult });
+  }
+  for (let i = 0; i < 6; i++) pool.push(randTileBonus());
+  // shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  demonGrid.innerHTML = '';
+  pool.forEach((bonus, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'demon-tile';
+    tile.dataset.idx = i;
+    tile.innerHTML = `
+      <div class="tile-inner">
+        <div class="tile-front">
+          <div class="tile-front-icon">😈</div>
+          <div class="tile-front-label">ODKRYJ</div>
+        </div>
+        <div class="tile-back ${bonus.color}">
+          <div class="tile-back-icon">${bonus.icon}</div>
+          <div class="tile-back-name">${bonus.name}</div>
+          <div class="tile-back-value">×${bonus.mult}</div>
+        </div>
+      </div>`;
+    tile._bonus = bonus;
+    tile.addEventListener('click', () => onTilePick(tile));
+    demonGrid.appendChild(tile);
+  });
+
+  demonOverlay.classList.add('visible');
+}
+
+function onTilePick(tile) {
+  if (demonDone) return;
+  if (tile.classList.contains('flipped') || tile.classList.contains('disabled')) return;
+
+  tile.classList.add('flipped', 'selected');
+  const bonus = tile._bonus;
+  demonFlipped.push(bonus);
+
+  // count types among flipped
+  const counts = {};
+  demonFlipped.forEach(b => { counts[b.type] = (counts[b.type] || 0) + 1; });
+
+  // check for 3-of-a-kind
+  const matchType = Object.keys(counts).find(k => counts[k] >= 3);
+
+  // update counter label
+  const remaining = 3 - Math.max(...Object.values(counts));
+  if (!matchType) {
+    demonPicksLeft.textContent = remaining > 0
+      ? `POTRZEBUJESZ JESZCZE ${remaining} JEDNAKOWYCH`
+      : 'ODKRYJ KOLEJNY KAFELEK...';
+  }
+
+  if (matchType) {
+    // WIN — collect the 3 matching tiles' prizes
+    demonDone = true;
+    const matchedTiles = demonFlipped.filter(b => b.type === matchType).slice(0, 3);
+    const prize = matchedTiles.reduce((sum, b) => sum + Math.floor(demonBet * b.mult), 0);
+
+    demonPicksLeft.textContent = '🎉 3 JEDNAKOWE! BONUS ZALICZONY!';
+    demonPicksLeft.style.color = '#00ff88';
+
+    // float badge on clicked tile
+    const rect = tile.getBoundingClientRect();
+    spawnFloatBadge(`+${prize.toLocaleString('pl-PL')}`, rect.left + rect.width / 2, rect.top);
+
+    setTimeout(() => {
+      // reveal rest
+      demonGrid.querySelectorAll('.demon-tile:not(.flipped)').forEach(t => {
+        t.classList.add('disabled');
+        setTimeout(() => t.classList.add('flipped'), 200 + Math.random() * 500);
+      });
+      setTimeout(() => {
+        demonPicksLeft.style.color = '';
+        demonOverlay.classList.remove('visible');
+        setBalance(getBalance() + prize);
+        addHistory(prize, true);
+        const t = TILE_TYPES.find(x => x.type === matchType);
+        showWinPopup(prize, true, `😈 3× ${t.name}`);
+        spinning = false;
+        spinBtn.disabled = false;
+      }, 1400);
+    }, 500);
+
+  } else if (demonFlipped.length === 9) {
+    // all tiles flipped, no match — bonus lost
+    demonDone = true;
+    demonPicksLeft.textContent = '💀 BRAK 3 JEDNAKOWYCH — BONUS PRZEPADA';
+    demonPicksLeft.style.color = '#ff3355';
+
+    setTimeout(() => {
+      demonPicksLeft.style.color = '';
+      demonOverlay.classList.remove('visible');
+      addHistory(0, true);
+      showToast('Brak 3 jednakowych — bonus przepadł!', true);
+      spinning = false;
+      spinBtn.disabled = false;
+    }, 1800);
+  }
+}
+
+// ── WIN POPUP ──
+function showWinPopup(amount, isDemon, label) {
+  const inner  = document.getElementById('winPopupInner');
+  const lbl    = document.getElementById('winPopupLabel');
+  const amt    = document.getElementById('winPopupAmount');
+  const sub    = document.getElementById('winPopupSub');
+
+  lbl.textContent = label || 'WYGRANA';
+  amt.textContent = '+' + amount.toLocaleString('pl-PL') + ' PKT';
+  amt.className   = 'win-popup-amount' + (isDemon ? ' demon-color' : '');
+  inner.className = 'win-popup-inner' + (isDemon ? ' demon-win' : '');
+  sub.textContent = isDemon ? 'Demon Bonus!' : '';
+
+  inner.classList.add('show');
+  setTimeout(() => inner.classList.remove('show'), 2200);
+}
+
+// ── FLOAT BADGE ──
+function spawnFloatBadge(text, x, y) {
+  const el = document.createElement('div');
+  el.className = 'float-badge';
+  el.textContent = text;
+  el.style.left = (x !== undefined ? x - 30 : window.innerWidth / 2 - 30) + 'px';
+  el.style.top  = (y !== undefined ? y      : window.innerHeight / 2) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+// ── HISTORY ──
+const historyPills = document.getElementById('historyPills');
+const historyData  = [];
+
+function addHistory(win, isBonus) {
+  historyData.unshift({ win, isBonus });
+  if (historyData.length > 12) historyData.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  historyPills.innerHTML = '';
+  historyData.forEach(h => {
+    const p = document.createElement('span');
+    if (h.isBonus) {
+      p.className = 'h-pill bonus';
+      p.textContent = h.win > 0 ? '+' + h.win.toLocaleString('pl-PL') + ' 😈' : '😈 BONUS';
+    } else if (h.win === 0) {
+      p.className = 'h-pill loss';
+      p.textContent = '×';
+    } else if (h.win >= 1000) {
+      p.className = 'h-pill big';
+      p.textContent = '+' + h.win.toLocaleString('pl-PL');
+    } else {
+      p.className = 'h-pill small';
+      p.textContent = '+' + h.win.toLocaleString('pl-PL');
+    }
+    historyPills.appendChild(p);
+  });
+}
+
+// ── TOAST ──
+function showToast(msg, bad = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = bad ? '#ff3355' : '#00ff88';
+  t.style.color      = bad ? '#fff'    : '#0a0e17';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── UTIL ──
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── INIT: show empty reels ──
+reelEls.forEach(r => {
+  const cell = document.createElement('div');
+  cell.className = 'reel-cell';
+  cell.textContent = '❓';
+  r.inner.appendChild(cell);
+});
+</script>
+</body>
+</html>

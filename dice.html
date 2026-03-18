@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dice – NeonCasino</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0a0e17; color: #e0e0e0; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; border-bottom: 1px solid #1a2035; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: #00ff88; text-decoration: none; letter-spacing: 2px; }
+        .wallet { background: #111827; border: 1px solid #1e2d40; border-radius: 10px; padding: 8px 16px; display: flex; align-items: center; gap: 10px; }
+        .wallet-amount { font-weight: 700; color: #00ff88; }
+
+        .main { max-width: 600px; margin: 50px auto; width: 100%; padding: 0 20px; text-align: center; }
+        
+        /* DICE DISPLAY */
+        .result-box { background: #111827; border: 2px solid #1a2535; border-radius: 20px; padding: 40px; margin-bottom: 30px; position: relative; overflow: hidden; }
+        #rollValue { font-family: 'JetBrains Mono', monospace; font-size: 5rem; font-weight: 800; color: #e0e0e0; text-shadow: 0 0 20px rgba(255,255,255,0.1); }
+        .win-glow { position: absolute; inset: 0; box-shadow: inset 0 0 50px #00ff8844; opacity: 0; transition: 0.3s; pointer-events: none; }
+
+        /* CONTROLS */
+        .panel { background: #111827; border: 1px solid #1a2535; border-radius: 16px; padding: 25px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .stat-row { display: flex; justify-content: space-around; margin-bottom: 10px; }
+        .stat-item { display: flex; flex-direction: column; gap: 4px; }
+        .stat-label { font-size: 0.65rem; color: #556; text-transform: uppercase; letter-spacing: 1.5px; }
+        .stat-val { font-family: 'JetBrains Mono', monospace; color: #00ff88; font-weight: 700; }
+
+        input[type="range"] { width: 100%; height: 12px; background: #0a0e17; border-radius: 6px; outline: none; appearance: none; cursor: pointer; border: 1px solid #1a2535; }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; background: #00ff88; border-radius: 50%; box-shadow: 0 0 10px #00ff88; border: 3px solid #0a0e17; }
+
+        .bet-input { background: #0a0e17; border: 1px solid #1e2d40; color: #fff; padding: 12px; border-radius: 10px; font-weight: 700; text-align: center; font-size: 1.1rem; width: 100%; outline: none; margin: 10px 0; }
+        
+        button#rollBtn { background: #00ff8811; border: 2px solid #00ff88; color: #00ff88; padding: 18px; border-radius: 12px; width: 100%; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: 0.2s; letter-spacing: 2px; }
+        button#rollBtn:hover { background: #00ff88; color: #0a0e17; box-shadow: 0 0 20px #00ff8866; }
+        button#rollBtn:active { transform: scale(0.98); }
+
+        .back-link { display: inline-block; margin-top: 30px; color: #556; text-decoration: none; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">⬡ NeonCasino</a>
+    <div class="wallet">
+        <span>🪙</span>
+        <span class="wallet-amount" id="balanceDisplay">0 PKT</span>
+    </div>
+</header>
+
+<div class="main">
+    <div class="result-box" id="resultBox">
+        <div class="win-glow" id="winGlow"></div>
+        <div id="rollValue">50.00</div>
+    </div>
+
+    <div class="panel">
+        <div class="stat-row">
+            <div class="stat-item">
+                <span class="stat-label">Mnożnik</span>
+                <span class="stat-val" id="multVal">2.00x</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Szansa</span>
+                <span class="stat-val" id="chanceVal">49.5%</span>
+            </div>
+        </div>
+
+        <input type="range" id="diceSlider" min="2" max="98" value="50">
+        
+        <div style="font-size: 0.8rem; color: #e0e0e0; font-weight: 700;">
+            CEL: POWYŻEJ <span id="targetVal" style="color: #00ff88;">50</span>
+        </div>
+
+        <input type="number" class="bet-input" id="betAmount" value="100" min="10">
+
+        <button id="rollBtn">RZUCAJ KOŚCIĄ</button>
+    </div>
+
+    <a href="index.html" class="back-link">← Wróć do Lobby</a>
+</div>
+
+<script>
+    const BAL_KEY = 'casino_balance';
+    let balance = parseInt(localStorage.getItem(BAL_KEY) || '25000');
+
+    const slider = document.getElementById('diceSlider');
+    const targetDisplay = document.getElementById('targetVal');
+    const multDisplay = document.getElementById('multVal');
+    const chanceDisplay = document.getElementById('chanceVal');
+    const rollDisplay = document.getElementById('rollValue');
+    const resultBox = document.getElementById('resultBox');
+    const winGlow = document.getElementById('winGlow');
+
+    function updateBalance(amt) {
+        balance += amt;
+        localStorage.setItem(BAL_KEY, balance);
+        document.getElementById('balanceDisplay').textContent = balance.toLocaleString() + ' PKT';
+    }
+    updateBalance(0);
+
+    function updateStats() {
+        const val = slider.value;
+        const chance = 100 - val;
+        // Mnożnik: (99 / szansa) - standardowa formuła kasynowa
+        const multiplier = (99 / chance).toFixed(2);
+        
+        targetDisplay.textContent = val;
+        multDisplay.textContent = multiplier + 'x';
+        chanceDisplay.textContent = chance.toFixed(1) + '%';
+    }
+
+    slider.oninput = updateStats;
+    updateStats();
+
+    document.getElementById('rollBtn').onclick = function() {
+        const bet = parseInt(document.getElementById('betAmount').value);
+        if (bet > balance || bet <= 0) return alert("Błędna stawka!");
+
+        updateBalance(-bet);
+        const target = parseInt(slider.value);
+        const roll = (Math.random() * 100).toFixed(2);
+        
+        // Animacja cyferek
+        rollDisplay.textContent = "...";
+        
+        setTimeout(() => {
+            rollDisplay.textContent = roll;
+            const win = parseFloat(roll) > target;
+
+            if (win) {
+                const mult = parseFloat(multDisplay.textContent);
+                const winAmt = Math.floor(bet * mult);
+                updateBalance(winAmt);
+                rollDisplay.style.color = "#00ff88";
+                winGlow.style.opacity = "1";
+            } else {
+                rollDisplay.style.color = "#ff3355";
+                winGlow.style.opacity = "0";
+            }
+
+            setTimeout(() => {
+                winGlow.style.opacity = "0";
+                rollDisplay.style.color = "#e0e0e0";
+            }, 800);
+        }, 300);
+    };
+</script>
+</body>
+</html>
