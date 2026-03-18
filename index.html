@@ -296,7 +296,7 @@
       <div class="jp-modes">
         <button class="jp-mode-btn active" data-mode="low">🟢 Low<br><span style="font-size:.65rem;font-weight:400;letter-spacing:0">do 25 000 PKT</span></button>
         <button class="jp-mode-btn" data-mode="mid">🔵 Mid<br><span style="font-size:.65rem;font-weight:400;letter-spacing:0">od 2 000 · do 50 000</span></button>
-        <button class="jp-mode-btn" data-mode="high">🟡 High<br><span style="font-size:.65rem;font-weight:400;letter-spacing:0">od 10 000 · do 100 000</span></button>
+        <button class="jp-mode-btn" data-mode="high">🟡 High<br><span style="font-size:.65rem;font-weight:400;letter-spacing:0">od 10 000 · bez limitu</span></button>
       </div>
       <div class="jp-mode-info" id="jpModeInfo"></div>
       <div class="jp-progress-wrap"><div class="jp-progress-bar" id="jpProgressBar" style="width:0%"></div></div>
@@ -530,9 +530,9 @@
   let jpCurrentMode = 'low';
 
   const JP_MODES = {
-    low:  { label: 'Low',  cap: 25000,  minEntry: 0,     color: '#2ecc71', botItems: ['silver_coin','gold_nugget'] },
-    mid:  { label: 'Mid',  cap: 50000,  minEntry: 2000,  color: '#3498db', botItems: ['gold_nugget','ruby','demon_skull'] },
-    high: { label: 'High', cap: 100000, minEntry: 10000, color: '#ffd700', botItems: ['demon_skull','diamond','crown'] },
+    low:  { label: 'Low',  cap: 25000,  minEntry: 0,     color: '#2ecc71', botItems: ['silver_coin','gold_nugget'],          botCount: [1,2] },
+    mid:  { label: 'Mid',  cap: 50000,  minEntry: 2000,  color: '#3498db', botItems: ['gold_nugget','ruby','demon_skull'],   botCount: [2,4] },
+    high: { label: 'High', cap: 0,      minEntry: 10000, color: '#ffd700', botItems: ['demon_skull','diamond','crown'],      botCount: [3,6] },
   };
 
   const BOT_NAMES = ['ShadowBot','NeonWolf','CryptoAce','LuckyPL','DarkHorse','GoldRush','NightOwl','IronFist'];
@@ -565,12 +565,14 @@
   function renderJpModeInfo() {
     const m = jpMode();
     const total = jpPoolTotal();
-    const pct = Math.min(100, (total / m.cap) * 100).toFixed(0);
+    const hasCap = m.cap > 0;
+    const pct = hasCap ? Math.min(100, (total / m.cap) * 100).toFixed(0) : 0;
     document.getElementById('jpModeInfo').textContent =
-      `${m.label}: pula ${total.toLocaleString('pl-PL')} / ${m.cap.toLocaleString('pl-PL')} PKT` +
+      `${m.label}: pula ${total.toLocaleString('pl-PL')} PKT` +
+      (hasCap ? ` / ${m.cap.toLocaleString('pl-PL')} PKT` : ' · bez limitu puli') +
       (m.minEntry > 0 ? ` · min. wejście ${m.minEntry.toLocaleString('pl-PL')} PKT` : ' · brak limitu wejścia') +
-      ` · ${pct}% zapełnienia`;
-    document.getElementById('jpProgressBar').style.width = pct + '%';
+      (hasCap ? ` · ${pct}% zapełnienia` : '');
+    document.getElementById('jpProgressBar').style.width = hasCap ? pct + '%' : '0%';
     document.getElementById('jpProgressBar').style.background =
       jpCurrentMode === 'low' ? 'linear-gradient(90deg,#1a7a40,#2ecc71)' :
       jpCurrentMode === 'mid' ? 'linear-gradient(90deg,#1a4a8a,#3498db)' :
@@ -613,8 +615,8 @@
     for (const [id, cnt] of Object.entries(jpSelectedItems)) selValue += getItemValue(id) * cnt;
     const m = jpMode();
     const meetsMin = selValue >= m.minEntry;
-    const poolLeft = m.cap - jpPoolTotal();
-    const fitsPool = selValue <= poolLeft;
+    const poolLeft = m.cap > 0 ? m.cap - jpPoolTotal() : Infinity;
+    const fitsPool = poolLeft === Infinity || selValue <= poolLeft;
     const btn = document.getElementById('jpBetBtn');
     btn.disabled = !hasItems || !meetsMin || !fitsPool || jpSpinning;
     if (hasItems && !meetsMin && m.minEntry > 0)
@@ -650,9 +652,27 @@
     updateJpSpinBtn();
     showToast(`Dodano do puli: ${value.toLocaleString('pl-PL')} PKT`);
     startBotTimer();
+    checkAutoSpin();
   });
 
-  function checkAutoSpin() { /* replaced by 60s countdown */ }
+  function checkAutoSpin() {
+    const m = jpMode();
+    if (m.cap <= 0) return; // High: no cap, only countdown triggers spin
+    if (!jpSpinning && jpEntries.length >= 2 && jpPoolTotal() >= m.cap) {
+      clearInterval(jpCountdownTimer);
+      jpCountdownSec = 3;
+      updateCountdownDisplay();
+      showToast('🎰 Pula pełna! Losowanie za 3s...');
+      jpCountdownTimer = setInterval(() => {
+        jpCountdownSec--;
+        updateCountdownDisplay();
+        if (jpCountdownSec <= 0) {
+          clearInterval(jpCountdownTimer);
+          spinWheel();
+        }
+      }, 1000);
+    }
+  }
 
   function renderJpEntries() {
     const total = jpPoolTotal();
@@ -773,17 +793,24 @@
       if (e === winner) { winnerStart = acc; winnerSlice = slice; break; }
       acc += slice;
     }
-    const targetAngle = -(winnerStart + winnerSlice / 2);
+    // pointer is at angle=0 (right side of canvas)
+    // we need the winner's mid-angle to land at angle=0
+    // wheel draws segments starting from `angle` param, so we rotate the whole wheel
+    // such that winnerMid ends up at 0 → rotate by -(winnerMid)
+    const winnerMid = winnerStart + winnerSlice / 2;
     const spins = 6 + Math.random() * 4;
-    const finalAngle = targetAngle - spins * Math.PI * 2;
+    // final resting angle: enough full spins + correction so winnerMid hits pointer
+    const finalAngle = -(spins * Math.PI * 2 + winnerMid);
     const duration = 5000;
     const startTime = performance.now();
 
     function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
     function frame(now) {
       const t = Math.min((now - startTime) / duration, 1);
-      drawWheel((finalAngle) * easeOut(t));
+      drawWheel(finalAngle * easeOut(t));
       if (t < 1) { requestAnimationFrame(frame); return; }
+      // draw final resting position precisely
+      drawWheel(finalAngle);
       jpSpinning = false;
       showWinner(winner);
     }
@@ -816,9 +843,9 @@
 
   // ── BOTS ──
   function startBotTimer() {
-    clearInterval(jpBotTimer);
+    clearTimeout(jpBotTimer);
     if (jpSpinning) return;
-    const delay = 3000 + Math.random() * 5000;
+    const delay = 800 + Math.random() * 2200;
     jpBotTimer = setTimeout(() => {
       if (jpSpinning || jpEntries.length >= 8) return;
       addBot();
@@ -828,18 +855,19 @@
 
   function addBot() {
     const m = jpMode();
-    const poolLeft = m.cap - jpPoolTotal();
+    const poolLeft = m.cap > 0 ? m.cap - jpPoolTotal() : Infinity;
     if (poolLeft <= 0) return;
     const idx = Math.floor(Math.random() * BOT_NAMES.length);
     const name = BOT_NAMES[idx];
     if (jpEntries.find(e => e.name === name)) return;
     const eligibleItems = SHOP_ITEMS.filter(i => m.botItems.includes(i.id));
-    const count = 1 + Math.floor(Math.random() * 3);
+    const [minC, maxC] = m.botCount;
+    const count = minC + Math.floor(Math.random() * (maxC - minC + 1));
     const items = [];
     let value = 0;
     for (let i = 0; i < count; i++) {
       const item = eligibleItems[Math.floor(Math.random() * eligibleItems.length)];
-      if (value + item.price > poolLeft) break;
+      if (poolLeft !== Infinity && value + item.price > poolLeft) break;
       items.push(item.id);
       value += item.price;
     }
