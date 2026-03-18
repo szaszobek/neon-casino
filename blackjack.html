@@ -191,6 +191,24 @@
 </div>
 
 <script>
+  // ── AUDIO ──
+  const AC = new (window.AudioContext || window.webkitAudioContext)();
+  document.addEventListener('click', () => { if (AC.state === 'suspended') AC.resume(); }, { once: true });
+  function _tone(f, type, vol, atk, dec, t) {
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.connect(g); g.connect(AC.destination);
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + atk);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + atk + dec);
+    o.start(t); o.stop(t + atk + dec + 0.05);
+  }
+  function soundCard()  { _tone(300 + Math.random()*200, 'sine', 0.1, 0.003, 0.07, AC.currentTime); }
+  function soundWin()   { [523,659,784,1047].forEach((f,i) => _tone(f,'sine',0.2,0.01,0.28,AC.currentTime+i*0.09)); }
+  function soundBJ()    { [523,659,784,1047,1319].forEach((f,i) => _tone(f,'sine',0.22,0.01,0.35,AC.currentTime+i*0.08)); setTimeout(()=>[1047,1319,1568].forEach((f,i)=>_tone(f,'sine',0.12,0.01,0.3,AC.currentTime+i*0.07)),500); }
+  function soundLose()  { [400,300,220].forEach((f,i) => _tone(f,'sine',0.15,0.01,0.3,AC.currentTime+i*0.15)); }
+  function soundBust()  { _tone(200,'sawtooth',0.2,0.01,0.4,AC.currentTime); _tone(150,'sawtooth',0.15,0.01,0.35,AC.currentTime+0.1); }
+  function soundPush()  { _tone(440,'sine',0.12,0.01,0.2,AC.currentTime); _tone(440,'sine',0.08,0.01,0.2,AC.currentTime+0.25); }
   // ── BALANCE ──
   const BAL_KEY    = 'casino_balance';
   const getBalance = () => parseInt(localStorage.getItem(BAL_KEY) || '25000', 10);
@@ -410,6 +428,7 @@
         showResult('BLACKJACK!', '+' + payout.toLocaleString('pl-PL') + ' PKT', 'win');
         log('BLACKJACK! Wygrana: ' + payout.toLocaleString('pl-PL') + ' PKT', 'highlight');
         highlightCards('playerHand', 'glow-green');
+        soundBJ();
         break;
       case 'win':
         payout = currentBet * 2;
@@ -417,22 +436,26 @@
         showResult('WYGRAŁEŚ!', '+' + payout.toLocaleString('pl-PL') + ' PKT', 'win');
         log('Wygrana! Gracz: ' + ps + ' vs Krupier: ' + ds, 'highlight');
         highlightCards('playerHand', 'glow-green');
+        soundWin();
         break;
       case 'bust':
         showResult('BUST!', 'Przekroczyłeś 21', 'lose');
         log('Bust! Gracz: ' + ps, 'bad');
         highlightCards('playerHand', 'glow-red');
+        soundBust();
         break;
       case 'lose':
         showResult('PRZEGRAŁEŚ', 'Krupier: ' + ds + ' | Ty: ' + ps, 'lose');
         log('Przegrana. Gracz: ' + ps + ' vs Krupier: ' + ds, 'bad');
         highlightCards('dealerHand', 'glow-green');
+        soundLose();
         break;
       case 'push':
         payout = currentBet;
         setBalance(getBalance() + payout);
         showResult('REMIS', 'Zwrot stawki', 'push');
         log('Remis. Obaj mają ' + ps);
+        soundPush();
         break;
     }
   }
@@ -459,6 +482,7 @@
       `;
     }
     document.getElementById(handId).appendChild(el);
+    soundCard();
   }
 
   function revealDealer() {
