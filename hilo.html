@@ -3,83 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hi-Lo – NeonCasino</title>
+    <title>Hi-Lo Elite – NeonCasino</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #0a0e17; color: #e0e0e0; font-family: 'Inter', sans-serif; min-height: 100vh; perspective: 1500px; overflow: hidden; }
+        body { background: #0a0e17; color: #e0e0e0; font-family: 'Inter', sans-serif; min-height: 100vh; perspective: 1500px; overflow-x: hidden; }
         
-        header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; border-bottom: 1px solid #1a2035; z-index: 100; position: relative; }
+        header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; border-bottom: 1px solid #1a2035; z-index: 100; position: relative; background: #0a0e17; }
         .logo { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; color: #00ff88; text-decoration: none; letter-spacing: 2px; }
         .wallet { background: #111827; border: 1px solid #1e2d40; border-radius: 10px; padding: 8px 16px; display: flex; align-items: center; gap: 10px; }
         .wallet-amount { font-weight: 700; color: #00ff88; }
 
         .game-container { max-width: 600px; margin: 20px auto; padding: 20px; text-align: center; }
         
-        .multiplier-badge { font-size: 3rem; font-weight: 800; color: #00ff88; margin-bottom: 5px; text-shadow: 0 0 20px #00ff8866; }
-        .potential-win { color: #445566; font-size: 0.9rem; margin-bottom: 30px; font-weight: 700; text-transform: uppercase; }
+        .multiplier-badge { font-size: 3rem; font-weight: 800; color: #00ff88; margin-bottom: 5px; text-shadow: 0 0 20px #00ff8866; transition: 0.3s; }
+        .potential-win { color: #445566; font-size: 0.9rem; margin-bottom: 10px; font-weight: 700; text-transform: uppercase; }
+
+        /* KOMUNIKATY ZAMIAST ALERTÓW */
+        #statusMsg { height: 40px; margin-bottom: 20px; font-weight: 900; font-size: 1.2rem; text-transform: uppercase; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .lose-text { color: #ff3355; text-shadow: 0 0 15px #ff335566; animation: shake 0.4s; }
+        .win-text { color: #00ff88; }
+
+        @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-10px);} 75% {transform: translateX(10px);} }
 
         /* --- STÓŁ DO KART --- */
-        .card-table {
-            display: flex; justify-content: center; align-items: center; gap: 60px; margin-bottom: 40px; min-height: 250px; position: relative;
-        }
-
-        .deck-stack {
-            width: 120px; height: 170px; background: #1a2035; border: 2px solid #00ff8844; border-radius: 12px;
-            position: relative; box-shadow: 4px 4px 0 #00ff8822, 8px 8px 0 #00ff8811;
-            display: flex; justify-content: center; align-items: center; font-size: 2rem; color: #00ff8822;
-        }
-
-        /* Kontener na stos kart */
+        .card-table { display: flex; justify-content: center; align-items: center; gap: 60px; margin-bottom: 40px; min-height: 250px; position: relative; }
+        .deck-stack { width: 120px; height: 170px; background: #1a2035; border: 2px solid #00ff8844; border-radius: 12px; position: relative; box-shadow: 4px 4px 0 #00ff8822, 8px 8px 0 #00ff8811; display: flex; justify-content: center; align-items: center; font-size: 2rem; color: #00ff8822; }
         #cardStack { width: 120px; height: 170px; position: relative; }
 
-        /* Styl pojedynczej karty na stosie */
-        .card-container {
-            width: 120px; height: 170px; position: absolute; top: 0; left: 0;
-            transform-style: preserve-3d; transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
-            transform: translate(-180px, 0) rotateY(180deg); opacity: 0;
-        }
-        
-        .card-container.active {
-            transform: translate(0, 0) rotateY(0deg); opacity: 1;
-        }
+        .card-container { width: 120px; height: 170px; position: absolute; top: 0; left: 0; transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1); transform: translate(-180px, 0) rotateY(180deg); opacity: 0; }
+        .card-container.active { transform: translate(0, 0) rotateY(0deg); opacity: 1; }
+        .card-container.old { opacity: 0.4; transform: translate(-15px, -15px) scale(0.9); pointer-events: none; filter: blur(1px); }
 
-        /* Efekt poprzedniej karty (pod spodem) */
-        .card-container.old {
-            opacity: 0.4; transform: translate(-5px, -5px) scale(0.95); pointer-events: none;
-        }
-
-        .card-face {
-            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
-            border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; padding: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .card-front {
-            background: #111827; border: 2px solid #00ff88;
-            font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 800; color: #e0e0e0;
-        }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; padding: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 2px solid #00ff88; background: #111827; }
+        .card-front { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 800; color: #e0e0e0; }
         .card-front.red { color: #ff3355; border-color: #ff3355; }
-
-        .card-back {
-            background: #1a2035; border: 2px solid #00ff8866;
-            transform: rotateY(180deg); display: flex; justify-content: center; align-items: center;
-        }
 
         /* --- PANEL STEROWANIA --- */
         .controls { background: #111827; border: 1px solid #1a2535; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
-        .bet-input { background: #0a0e17; border: 1px solid #1e2d40; color: #fff; padding: 12px; border-radius: 10px; text-align: center; font-weight: 700; width: 100%; outline: none; }
-        
+        .bet-input { background: #0a0e17; border: 1px solid #1e2d40; color: #fff; padding: 12px; border-radius: 10px; text-align: center; font-weight: 700; width: 100%; outline: none; font-size: 1.1rem; }
         .btn-row { display: flex; gap: 10px; }
         button { flex: 1; padding: 15px; border-radius: 10px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: 0.2s; }
-        
         .btn-hi { background: #00ff88; color: #0a0e17; }
         .btn-lo { background: #ff3355; color: #fff; }
-        .btn-cashout { background: #ffaa00; color: #0a0e17; width: 100%; margin-top: 10px; }
+        .btn-cashout { background: #fff; color: #0a0e17; width: 100%; margin-top: 10px; }
         .btn-start { background: transparent; border: 2px solid #00ff88; color: #00ff88; width: 100%; }
 
         button:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.1); }
-        button:disabled { background: #1a2035; color: #445; cursor: not-allowed; opacity: 0.5; }
+        button:disabled { background: #1a2035 !important; color: #445 !important; cursor: not-allowed; opacity: 0.5; border: none; }
 
         .back-link { display: inline-block; margin-top: 30px; color: #556; text-decoration: none; font-size: 0.8rem; font-weight: 700; }
     </style>
@@ -97,6 +68,7 @@
 <div class="game-container">
     <div class="multiplier-badge" id="multDisplay">1.00x</div>
     <div class="potential-win" id="winDisplay">DO WYGRANIA: 0 PKT</div>
+    <div id="statusMsg">ZAGRAJ, ABY ZACZĄĆ</div>
 
     <div class="card-table">
         <div class="deck-stack">⬡</div>
@@ -114,7 +86,7 @@
                 <button class="btn-hi" id="btnHi">WYŻEJ (HI)</button>
                 <button class="btn-lo" id="btnLo">NIŻEJ (LO)</button>
             </div>
-            <button class="btn-cashout" id="btnCashout">WYPŁAĆ (CASHOUT)</button>
+            <button class="btn-cashout" id="btnCashout" disabled>ZAGRAJ MIN. 1 RAZ</button>
         </div>
     </div>
 
@@ -132,6 +104,7 @@
     let currentBet = 0;
     let currentMult = 1.00;
     let canGuess = false;
+    let movesInRound = 0; // Licznik ruchów w rundzie
 
     function updateBalance(amt) {
         balance += amt;
@@ -142,61 +115,51 @@
 
     function createCardUI(cardData) {
         const isRed = cardData.suit === '❤️' || cardData.suit === '♦';
-        const cardHTML = `
-            <div class="card-inner">
-                <div class="card-face card-front ${isRed ? 'red' : ''}">
-                    <div>${cardValues[cardData.valIdx]}</div>
-                    <div style="font-size: 2.5rem; align-self: center;">${cardData.suit}</div>
-                    <div style="align-self: flex-end;">${cardValues[cardData.valIdx]}</div>
-                </div>
-                <div class="card-face card-back">
-                    <div style="font-size: 2rem; color: #00ff8833;">⬡</div>
-                </div>
-            </div>
-        `;
         const div = document.createElement('div');
         div.className = 'card-container';
-        div.innerHTML = cardHTML;
+        div.innerHTML = `
+            <div class="card-face card-front ${isRed ? 'red' : ''}">
+                <div>${cardValues[cardData.valIdx]}</div>
+                <div style="font-size: 2.5rem; align-self: center;">${cardData.suit}</div>
+                <div style="align-self: flex-end;">${cardValues[cardData.valIdx]}</div>
+            </div>
+        `;
         return div;
     }
 
     async function addCardToStack(cardData) {
         canGuess = false;
         const stack = document.getElementById('cardStack');
-        
-        // 1. Oznacz starą kartę (jeśli istnieje)
         const oldCard = stack.querySelector('.card-container.active');
+        
         if (oldCard) {
             oldCard.classList.remove('active');
             oldCard.classList.add('old');
-            // Usuń bardzo stare karty, żeby nie obciążać przeglądarki
-            if (stack.children.length > 5) stack.removeChild(stack.firstChild);
+            setTimeout(() => { if(stack.children.length > 3) stack.removeChild(stack.firstChild); }, 600);
         }
 
-        // 2. Stwórz nową kartę
         const newCard = createCardUI(cardData);
         stack.appendChild(newCard);
 
-        // 3. Animacja
-        setTimeout(() => {
-            newCard.classList.add('active');
-        }, 50);
-
+        setTimeout(() => { newCard.classList.add('active'); }, 50);
         await new Promise(r => setTimeout(r, 650));
         canGuess = true;
     }
 
     async function startGame() {
         const bet = parseInt(document.getElementById('betAmount').value);
-        if (bet > balance || bet <= 0) return alert("Brak środków!");
+        if (bet > balance || bet <= 0) return;
 
         updateBalance(-bet);
         currentBet = bet;
         currentMult = 1.00;
+        movesInRound = 0;
         
-        document.getElementById('cardStack').innerHTML = ''; // Wyczyść stół
+        document.getElementById('cardStack').innerHTML = '';
         document.getElementById('setupMode').style.display = 'none';
         document.getElementById('gameMode').style.display = 'block';
+        document.getElementById('statusMsg').textContent = "WYBIERZ KIERUNEK";
+        document.getElementById('statusMsg').className = "";
 
         const first = { valIdx: Math.floor(Math.random() * 13), suit: suits[Math.floor(Math.random() * 4)] };
         currentCardIdx = first.valIdx;
@@ -207,29 +170,48 @@
     function updateDisplays() {
         document.getElementById('multDisplay').textContent = currentMult.toFixed(2) + 'x';
         document.getElementById('winDisplay').textContent = `DO WYGRANIA: ${Math.floor(currentBet * currentMult)} PKT`;
+        
+        const cashBtn = document.getElementById('btnCashout');
+        if (movesInRound > 0) {
+            cashBtn.disabled = false;
+            cashBtn.textContent = `WYPŁAĆ ${Math.floor(currentBet * currentMult)} PKT`;
+            cashBtn.style.background = "#ffaa00";
+        } else {
+            cashBtn.disabled = true;
+            cashBtn.textContent = "ZAGRAJ MIN. 1 RAZ";
+            cashBtn.style.background = "#1a2035";
+        }
     }
 
     async function guess(isHi) {
         if (!canGuess) return;
         const next = { valIdx: Math.floor(Math.random() * 13), suit: suits[Math.floor(Math.random() * 4)] };
         
+        // Logika wygranej: HI (wyższa lub równa), LO (niższa lub równa)
         let win = isHi ? (next.valIdx >= currentCardIdx) : (next.valIdx <= currentCardIdx);
         
         currentCardIdx = next.valIdx;
         await addCardToStack(next);
 
         if (win) {
+            movesInRound++;
             currentMult *= 1.45;
+            document.getElementById('statusMsg').textContent = "DOBRY RUCH!";
+            document.getElementById('statusMsg').className = "win-text";
             updateDisplays();
         } else {
-            alert("SKUCHA!");
-            resetGame();
+            document.getElementById('statusMsg').textContent = "PRZEGRANA! SKUCHA";
+            document.getElementById('statusMsg').className = "lose-text";
+            document.getElementById('multDisplay').style.color = "#ff3355";
+            canGuess = false;
+            setTimeout(resetGame, 1500);
         }
     }
 
     function resetGame() {
         document.getElementById('setupMode').style.display = 'block';
         document.getElementById('gameMode').style.display = 'none';
+        document.getElementById('multDisplay').style.color = "#00ff88";
         canGuess = false;
     }
 
@@ -237,9 +219,11 @@
     document.getElementById('btnHi').onclick = () => guess(true);
     document.getElementById('btnLo').onclick = () => guess(false);
     document.getElementById('btnCashout').onclick = () => {
-        if (!canGuess) return;
+        if (!canGuess || movesInRound === 0) return;
         updateBalance(Math.floor(currentBet * currentMult));
-        resetGame();
+        document.getElementById('statusMsg').textContent = "WYPŁACONO!";
+        document.getElementById('statusMsg').className = "win-text";
+        setTimeout(resetGame, 1000);
     };
 </script>
 </body>
