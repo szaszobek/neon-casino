@@ -3,286 +3,245 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Casino Lobby</title>
+  <title>NeonCasino – Lobby</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: #0a0e17;
-      color: #e0e0e0;
-      font-family: 'Inter', 'Segoe UI', sans-serif;
-      min-height: 100vh;
-    }
+    body { background: #0a0e17; color: #e0e0e0; font-family: 'Inter', sans-serif; min-height: 100vh; }
 
     /* ── HEADER ── */
     header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 32px; border-bottom: 1px solid #1a2035;
+      position: sticky; top: 0; background: #0a0e17; z-index: 100;
+    }
+    .logo { font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; font-weight: 700; letter-spacing: 3px; color: #00ff88; text-transform: uppercase; }
+    .wallet { display: flex; align-items: center; gap: 10px; background: #111827; border: 1px solid #1e2d40; border-radius: 10px; padding: 10px 18px; }
+    .wallet-label { font-size: .7rem; color: #556; text-transform: uppercase; letter-spacing: 1px; }
+    .wallet-amount { font-size: 1.1rem; font-weight: 700; color: #00ff88; font-family: 'JetBrains Mono', monospace; }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex; gap: 4px;
+      padding: 0 32px;
       border-bottom: 1px solid #1a2035;
-      position: sticky;
-      top: 0;
       background: #0a0e17;
-      z-index: 100;
+      position: sticky; top: 65px; z-index: 99;
     }
-
-    .logo {
-      font-size: 1.4rem;
-      font-weight: 700;
-      letter-spacing: 3px;
-      color: #00ff88;
-      text-transform: uppercase;
-      font-family: 'JetBrains Mono', monospace;
+    .tab {
+      padding: 14px 24px; font-size: .82rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: #445566; cursor: pointer;
+      border-bottom: 2px solid transparent; transition: color .2s, border-color .2s;
+      background: none; border-top: none; border-left: none; border-right: none;
     }
+    .tab:hover { color: #aab; }
+    .tab.active { color: #00ff88; border-bottom-color: #00ff88; }
 
-    .wallet {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #111827;
-      border: 1px solid #1e2d40;
-      border-radius: 10px;
-      padding: 10px 18px;
-    }
+    /* ── LAYOUT ── */
+    .layout { display: grid; grid-template-columns: 1fr 220px; gap: 28px; max-width: 1200px; margin: 32px auto; padding: 0 24px; }
+    .section-title { font-size: .75rem; letter-spacing: 2px; text-transform: uppercase; color: #445566; margin-bottom: 16px; }
 
-    .wallet-icon { font-size: 1.3rem; }
+    /* ── TAB PANELS ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
-    .wallet-label {
-      font-size: 0.7rem;
-      color: #556;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .wallet-amount {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #00ff88;
-    }
-
-    /* ── MAIN LAYOUT ── */
-    .layout {
-      display: grid;
-      grid-template-columns: 1fr 220px;
-      gap: 28px;
-      max-width: 1200px;
-      margin: 32px auto;
-      padding: 0 24px;
-    }
-
-    /* ── FREE POINTS BUTTON ── */
+    /* ── FREE BTN ── */
     .free-btn-wrap { margin-bottom: 28px; }
-
     #freeBtn {
-      width: 100%;
-      padding: 18px;
-      background: transparent;
-      color: #00ff88;
-      font-size: 1rem;
-      font-weight: 800;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      border: 1px solid #00ff88;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 0 0 12px #00ff8840, inset 0 0 12px #00ff8808;
-      transition: background .2s, color .2s, box-shadow .2s, transform .1s;
+      width: 100%; padding: 18px; background: transparent; color: #00ff88;
+      font-size: 1rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+      border: 1px solid #00ff88; border-radius: 12px; cursor: pointer;
+      box-shadow: 0 0 12px #00ff8840; transition: background .2s, color .2s, box-shadow .2s, transform .1s;
     }
-
-    #freeBtn:hover:not(:disabled) {
-      background: #00ff88;
-      color: #0a0e17;
-      box-shadow: 0 0 22px #00ff8880;
-      transform: translateY(-1px);
-    }
-    #freeBtn:active:not(:disabled) { transform: translateY(0); }
-
-    #freeBtn:disabled {
-      background: transparent;
-      border-color: #1e2d40;
-      color: #445;
-      box-shadow: none;
-      cursor: not-allowed;
-    }
+    #freeBtn:hover:not(:disabled) { background: #00ff88; color: #0a0e17; box-shadow: 0 0 22px #00ff8880; transform: translateY(-1px); }
+    #freeBtn:disabled { border-color: #1e2d40; color: #445; box-shadow: none; cursor: not-allowed; }
 
     /* ── GAMES GRID ── */
-    .section-title {
-      font-size: 0.75rem;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #445566;
-      margin-bottom: 16px;
-    }
-
-    .games-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 16px;
-    }
-
+    .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
     .game-card {
-      background: #111827;
-      border: 1px solid #1a2535;
-      border-radius: 14px;
-      padding: 24px 14px 18px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      transition: border-color .2s, transform .2s, box-shadow .2s;
-      aspect-ratio: 1 / 1.1;
-      justify-content: center;
-      text-decoration: none;
-      color: inherit;
+      background: #111827; border: 1px solid #1a2535; border-radius: 14px;
+      padding: 24px 14px 18px; display: flex; flex-direction: column; align-items: center;
+      gap: 10px; transition: border-color .2s, transform .2s, box-shadow .2s;
+      aspect-ratio: 1 / 1.1; justify-content: center; text-decoration: none; color: inherit;
     }
-
-    .game-card.active:hover {
-      border-color: #00ff8866;
-      transform: translateY(-3px);
-      box-shadow: 0 8px 24px #00ff8818;
-    }
-
-    .game-card.inactive {
-      background: #0c1018;
-      border-color: #111820;
-      filter: grayscale(1);
-      opacity: 0.38;
-      pointer-events: none;
-    }
-
-    .game-icon {
-      font-size: 2rem;
-      line-height: 1;
-    }
-
-    .game-name {
-      font-size: 0.82rem;
-      font-weight: 700;
-      text-align: center;
-      color: #ccd;
-      letter-spacing: 0.5px;
-    }
-
+    .game-card.active:hover { border-color: #00ff8866; transform: translateY(-3px); box-shadow: 0 8px 24px #00ff8818; }
+    .game-card.inactive { background: #0c1018; border-color: #111820; filter: grayscale(1); opacity: .38; pointer-events: none; }
+    .game-icon { font-size: 2rem; line-height: 1; }
+    .game-name { font-size: .82rem; font-weight: 700; text-align: center; color: #ccd; letter-spacing: .5px; }
     .game-card.inactive .game-name { color: #445; }
-
-    .play-btn {
-      margin-top: 2px;
-      padding: 7px 20px;
-      background: transparent;
-      border: 1px solid #00ff88;
-      color: #00ff88;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background .2s, color .2s;
-    }
-
-    .play-btn:hover {
-      background: #00ff88;
-      color: #0a0e17;
-    }
-
-    .soon-badge {
-      margin-top: 2px;
-      padding: 5px 14px;
-      border: 1px solid #1e2d40;
-      border-radius: 8px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 1.5px;
-      color: #334;
-      text-transform: uppercase;
-    }
-
+    .play-btn { margin-top: 2px; padding: 7px 20px; background: transparent; border: 1px solid #00ff88; color: #00ff88; border-radius: 8px; font-size: .75rem; font-weight: 700; letter-spacing: 1px; }
+    .soon-badge { margin-top: 2px; padding: 5px 14px; border: 1px solid #1e2d40; border-radius: 8px; font-size: .68rem; font-weight: 700; letter-spacing: 1.5px; color: #334; text-transform: uppercase; }
     .lock-icon { font-size: 1rem; opacity: .5; }
 
     /* ── SIDEBAR ── */
-    .sidebar {}
-
-    .leaderboard {
-      background: #111827;
-      border: 1px solid #1a2535;
-      border-radius: 14px;
-      padding: 20px;
-      position: sticky;
-      top: 90px;
-    }
-
-    .leaderboard h3 {
-      font-size: 0.72rem;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #445566;
-      margin-bottom: 18px;
-    }
-
-    .lb-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 0;
-      border-bottom: 1px solid #1a2535;
-    }
-
+    .leaderboard { background: #111827; border: 1px solid #1a2535; border-radius: 14px; padding: 20px; position: sticky; top: 120px; }
+    .leaderboard h3 { font-size: .72rem; letter-spacing: 2px; text-transform: uppercase; color: #445566; margin-bottom: 18px; }
+    .lb-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid #1a2535; }
     .lb-row:last-child { border-bottom: none; }
+    .lb-rank { font-size: .75rem; font-weight: 700; color: #334; width: 18px; text-align: center; }
+    .lb-rank.gold { color: #ffd700; } .lb-rank.silver { color: #aaa; } .lb-rank.bronze { color: #cd7f32; }
+    .lb-name { flex: 1; font-size: .82rem; color: #bbc; }
+    .lb-score { font-size: .8rem; font-weight: 700; color: #00ff88; }
 
-    .lb-rank {
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: #334;
-      width: 18px;
-      text-align: center;
+    /* ── SHOP ── */
+    .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px; }
+    .shop-item {
+      background: #111827; border: 1px solid #1a2535; border-radius: 16px;
+      padding: 22px 18px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+    }
+    .shop-item:hover { border-color: #ffd70066; transform: translateY(-2px); box-shadow: 0 6px 20px #ffd70010; }
+    .shop-item-icon { font-size: 2.8rem; line-height: 1; }
+    .shop-item-name { font-size: .9rem; font-weight: 800; color: #e0e0e0; letter-spacing: .5px; }
+    .shop-item-desc { font-size: .72rem; color: #556; text-align: center; line-height: 1.5; }
+    .shop-item-price {
+      font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 700;
+      color: #ffd700; background: #1a1500; border: 1px solid #ffd70040;
+      border-radius: 8px; padding: 4px 14px;
+    }
+    .shop-item-owned { font-size: .7rem; color: #445566; letter-spacing: 1px; }
+    .shop-buy-btn {
+      width: 100%; padding: 10px; background: transparent; border: 1px solid #ffd700;
+      border-radius: 9px; color: #ffd700; font-size: .78rem; font-weight: 800;
+      letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer;
+      transition: background .2s, color .2s;
+    }
+    .shop-buy-btn:hover:not(:disabled) { background: #ffd700; color: #0a0e17; }
+    .shop-buy-btn:disabled { border-color: #1e2d40; color: #334; cursor: not-allowed; }
+
+    /* inventory bar */
+    .inventory-bar {
+      background: #111827; border: 1px solid #1a2535; border-radius: 14px;
+      padding: 16px 20px; margin-bottom: 24px;
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    }
+    .inv-label { font-size: .65rem; letter-spacing: 2px; text-transform: uppercase; color: #445566; margin-right: 4px; }
+    .inv-chip {
+      display: flex; align-items: center; gap: 6px;
+      background: #0d1220; border: 1px solid #1e2d40; border-radius: 8px;
+      padding: 5px 12px; font-size: .8rem; font-weight: 700; color: #e0e0e0;
+    }
+    .inv-chip span { font-family: 'JetBrains Mono', monospace; color: #ffd700; }
+
+    /* ── JACKPOT MODES ── */
+    .jp-modes { display: flex; gap: 8px; margin-bottom: 18px; }
+    .jp-mode-btn {
+      flex: 1; padding: 12px 8px; border-radius: 12px; border: 2px solid transparent;
+      font-size: .78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
+      cursor: pointer; transition: all .2s; background: #111827; color: #445566;
+    }
+    .jp-mode-btn:hover { color: #aab; }
+    .jp-mode-btn.active { color: #0a0e17; }
+    .jp-mode-btn[data-mode="low"].active  { background: #2ecc71; border-color: #2ecc71; box-shadow: 0 0 14px #2ecc7140; }
+    .jp-mode-btn[data-mode="mid"].active  { background: #3498db; border-color: #3498db; box-shadow: 0 0 14px #3498db40; }
+    .jp-mode-btn[data-mode="high"].active { background: #ffd700; border-color: #ffd700; box-shadow: 0 0 14px #ffd70040; }
+    .jp-mode-info { font-size: .68rem; color: #445566; text-align: center; margin-bottom: 4px; letter-spacing: .5px; }
+    .jp-progress-wrap { background: #0d1220; border-radius: 8px; height: 8px; margin-bottom: 18px; overflow: hidden; border: 1px solid #1a2535; }
+    .jp-progress-bar { height: 100%; border-radius: 8px; transition: width .4s ease; background: linear-gradient(90deg, #aa8800, #ffd700); }
+
+    /* ── JACKPOT ── */
+    .jackpot-wrap { display: flex; flex-direction: column; gap: 20px; }
+
+    .jackpot-pool-card {
+      background: linear-gradient(135deg, #1a1000, #12192a);
+      border: 2px solid #ffd70066; border-radius: 18px; padding: 28px;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .jackpot-pool-card::before {
+      content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
+      background: linear-gradient(90deg, transparent, #ffd700, transparent);
+    }
+    .jackpot-pool-label { font-size: .68rem; letter-spacing: 3px; text-transform: uppercase; color: #665500; margin-bottom: 8px; }
+    .jackpot-pool-amount {
+      font-family: 'JetBrains Mono', monospace; font-size: 3rem; font-weight: 800;
+      color: #ffd700; text-shadow: 0 0 30px #ffd70060;
+    }
+    .jackpot-pool-sub { font-size: .72rem; color: #445566; margin-top: 6px; }
+
+    .jackpot-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+    .jackpot-panel { background: #111827; border: 1px solid #1a2535; border-radius: 14px; padding: 20px; }
+    .jackpot-panel-title { font-size: .68rem; letter-spacing: 2px; text-transform: uppercase; color: #445566; margin-bottom: 14px; }
+
+    /* bet form */
+    .jp-bet-form { display: flex; flex-direction: column; gap: 10px; }
+    .jp-select-label { font-size: .65rem; letter-spacing: 1.5px; text-transform: uppercase; color: #445566; }
+    .jp-item-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .jp-item-btn {
+      display: flex; align-items: center; gap: 6px;
+      background: #0d1220; border: 1px solid #1e2d40; border-radius: 8px;
+      padding: 7px 12px; font-size: .78rem; font-weight: 700; color: #778;
+      cursor: pointer; transition: border-color .2s, color .2s;
+    }
+    .jp-item-btn:hover:not(:disabled) { border-color: #ffd70066; color: #ffd700; }
+    .jp-item-btn.selected { border-color: #ffd700; color: #ffd700; background: #1a150022; }
+    .jp-item-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+    .jp-submit {
+      width: 100%; padding: 13px; background: linear-gradient(135deg, #aa8800, #ffd700);
+      border: none; border-radius: 10px; color: #0a0e17; font-size: .9rem; font-weight: 800;
+      letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+      box-shadow: 0 4px 16px #ffd70030; transition: opacity .2s, transform .1s;
+    }
+    .jp-submit:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+    .jp-submit:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
+
+    /* entries list */
+    .jp-entries { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+    .jp-entries::-webkit-scrollbar { width: 3px; }
+    .jp-entries::-webkit-scrollbar-thumb { background: #1e2d40; border-radius: 3px; }
+    .jp-entry {
+      display: flex; align-items: center; gap: 10px;
+      background: #0d1220; border: 1px solid #1a2535; border-radius: 10px; padding: 10px 14px;
+      animation: fadeIn .3s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+    .jp-entry-avatar { font-size: 1.4rem; }
+    .jp-entry-name { flex: 1; font-size: .82rem; font-weight: 700; color: #ccd; }
+    .jp-entry-items { display: flex; gap: 4px; flex-wrap: wrap; }
+    .jp-entry-item { font-size: .9rem; }
+    .jp-entry-chance {
+      font-family: 'JetBrains Mono', monospace; font-size: .75rem; font-weight: 700; color: #ffd700;
     }
 
-    .lb-rank.gold   { color: #ffd700; }
-    .lb-rank.silver { color: #aaa; }
-    .lb-rank.bronze { color: #cd7f32; }
-
-    .lb-name {
-      flex: 1;
-      font-size: 0.82rem;
-      color: #bbc;
+    /* spin wheel */
+    .jp-wheel-wrap { text-align: center; }
+    #jpCanvas { border-radius: 50%; box-shadow: 0 0 40px #ffd70030; }
+    .jp-countdown {
+      margin-top: 14px; width: 100%; padding: 14px;
+      background: #0d1220; border: 2px solid #ffd70044; border-radius: 12px;
+      color: #ffd700; font-size: .9rem; font-weight: 800; letter-spacing: 2px;
+      text-transform: uppercase; text-align: center; font-family: 'JetBrains Mono', monospace;
     }
 
-    .lb-score {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: #00ff88;
+    /* winner banner */
+    #jpWinnerBanner {
+      display: none; background: linear-gradient(135deg, #1a1000, #0a0e17);
+      border: 2px solid #ffd700; border-radius: 16px; padding: 24px;
+      text-align: center; animation: popIn .4s cubic-bezier(.34,1.56,.64,1);
     }
+    #jpWinnerBanner.show { display: block; }
+    @keyframes popIn { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
+    .jp-winner-label { font-size: .68rem; letter-spacing: 3px; text-transform: uppercase; color: #665500; }
+    .jp-winner-name { font-size: 1.8rem; font-weight: 800; color: #ffd700; text-shadow: 0 0 20px #ffd70080; margin: 8px 0 4px; }
+    .jp-winner-prize { font-size: .85rem; color: #aab; }
 
     /* ── TOAST ── */
     #toast {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
+      position: fixed; bottom: 30px; left: 50%;
       transform: translateX(-50%) translateY(20px);
-      background: #00ff88;
-      color: #0a0e17;
-      padding: 12px 28px;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      opacity: 0;
-      transition: opacity .3s, transform .3s;
-      pointer-events: none;
-      z-index: 999;
+      background: #00ff88; color: #0a0e17;
+      padding: 12px 28px; border-radius: 10px;
+      font-weight: 700; font-size: .9rem; opacity: 0;
+      transition: opacity .3s, transform .3s; pointer-events: none; z-index: 999;
     }
-
-    #toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
     @media (max-width: 700px) {
       .layout { grid-template-columns: 1fr; }
-      .leaderboard { position: static; }
+      .jackpot-columns { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -291,7 +250,7 @@
 <header>
   <div class="logo">⬡ NeonCasino</div>
   <div class="wallet">
-    <span class="wallet-icon">🪙</span>
+    <span>🪙</span>
     <div>
       <div class="wallet-label">Saldo</div>
       <div class="wallet-amount" id="balanceDisplay">0 PKT</div>
@@ -299,19 +258,99 @@
   </div>
 </header>
 
+<!-- TABS -->
+<nav class="tabs">
+  <button class="tab active" data-tab="games">🎮 Gry</button>
+  <button class="tab" data-tab="shop">🛒 Sklep</button>
+  <button class="tab" data-tab="jackpot">🏆 Jackpot</button>
+</nav>
+
 <div class="layout">
-  <!-- LEFT: main content -->
   <main>
-    <div class="free-btn-wrap">
-      <button id="freeBtn">ODBIERZ DARMOWY BONUS</button>
+
+    <!-- ══ TAB: GAMES ══ -->
+    <div class="tab-panel active" id="tab-games">
+      <div class="free-btn-wrap">
+        <button id="freeBtn">ODBIERZ DARMOWY BONUS</button>
+      </div>
+      <p class="section-title">Wybierz grę</p>
+      <div class="games-grid" id="gamesGrid"></div>
     </div>
 
-    <p class="section-title">Wybierz grę</p>
-    <div class="games-grid" id="gamesGrid"></div>
+    <!-- ══ TAB: SHOP ══ -->
+    <div class="tab-panel" id="tab-shop">
+      <p class="section-title">Twój ekwipunek</p>
+      <div class="inventory-bar" id="inventoryBar">
+        <span class="inv-label">Posiadasz:</span>
+        <span id="invEmpty" style="font-size:.78rem;color:#334">Brak przedmiotów</span>
+      </div>
+
+      <p class="section-title">Sklep</p>
+      <div class="shop-grid" id="shopGrid"></div>
+    </div>
+
+    <!-- ══ TAB: JACKPOT ══ -->
+    <div class="tab-panel" id="tab-jackpot">
+
+      <!-- mode selector -->
+      <div class="jp-modes">
+        <button class="jp-mode-btn active" data-mode="low">🟢 Low<br><span style="font-size:.65rem;font-weight:400;letter-spacing:0">do 25 000 PKT</span></button>
+        <button class="jp-mode-btn" data-mode="mid">🔵 Mid<br><span style="font-size:.65rem;font-weight:400;letter-spacing:0">od 2 000 · do 50 000</span></button>
+        <button class="jp-mode-btn" data-mode="high">🟡 High<br><span style="font-size:.65rem;font-weight:400;letter-spacing:0">od 10 000 · do 100 000</span></button>
+      </div>
+      <div class="jp-mode-info" id="jpModeInfo"></div>
+      <div class="jp-progress-wrap"><div class="jp-progress-bar" id="jpProgressBar" style="width:0%"></div></div>
+
+      <!-- pool display -->
+      <div class="jackpot-pool-card">
+        <div class="jackpot-pool-label">Pula Jackpota</div>
+        <div class="jackpot-pool-amount" id="jpPoolDisplay">0 PKT</div>
+        <div class="jackpot-pool-sub" id="jpPoolSub">Obstaw przedmioty żeby dołączyć</div>
+      </div>
+
+      <div class="jackpot-columns" style="margin-top:18px">
+
+        <!-- LEFT: bet form + entries -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="jackpot-panel">
+            <div class="jackpot-panel-title">Obstaw przedmioty</div>
+            <div class="jp-bet-form">
+              <div class="jp-select-label">Wybierz co obstawiasz:</div>
+              <div class="jp-item-grid" id="jpItemGrid"></div>
+              <button class="jp-submit" id="jpBetBtn" disabled>WRZUĆ DO PULI</button>
+            </div>
+          </div>
+
+          <div class="jackpot-panel">
+            <div class="jackpot-panel-title">Uczestnicy</div>
+            <div class="jp-entries" id="jpEntries">
+              <div style="font-size:.75rem;color:#334;padding:8px 0">Brak uczestników — bądź pierwszy!</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: wheel + winner -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="jackpot-panel jp-wheel-wrap">
+            <div class="jackpot-panel-title">Koło fortuny</div>
+            <canvas id="jpCanvas" width="260" height="260"></canvas>
+            <div class="jp-countdown" id="jpCountdown">⏱ 60s</div>
+          </div>
+
+          <div id="jpWinnerBanner">
+            <div class="jp-winner-label">🏆 Zwycięzca</div>
+            <div class="jp-winner-name" id="jpWinnerName">—</div>
+            <div class="jp-winner-prize" id="jpWinnerPrize"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </main>
 
-  <!-- RIGHT: sidebar -->
-  <aside class="sidebar">
+  <!-- SIDEBAR -->
+  <aside>
     <div class="leaderboard">
       <h3>🏆 Lokalni Rekordziści</h3>
       <div id="leaderboardList"></div>
@@ -322,134 +361,518 @@
 <div id="toast"></div>
 
 <script>
-  // ── WALLET ──
-  const BALANCE_KEY = 'casino_balance';
-
-  function getBalance() {
-    const val = localStorage.getItem(BALANCE_KEY);
-    if (val === null) {
-      localStorage.setItem(BALANCE_KEY, '25000');
-      return 25000;
-    }
-    return parseInt(val, 10);
-  }
-
-  function setBalance(n) {
-    localStorage.setItem(BALANCE_KEY, String(n));
-    renderBalance();
-  }
-
+  // ── BALANCE ──
+  const BAL_KEY = 'casino_balance';
+  const getBalance = () => parseFloat(localStorage.getItem(BAL_KEY) || '25000');
+  const setBalance = v => { localStorage.setItem(BAL_KEY, v); renderBalance(); };
   function renderBalance() {
-    document.getElementById('balanceDisplay').textContent =
-      getBalance().toLocaleString('pl-PL') + ' PKT';
+    document.getElementById('balanceDisplay').textContent = getBalance().toLocaleString('pl-PL') + ' PKT';
   }
 
-  renderBalance();
+  // ── TABS ──
+  document.querySelectorAll('.tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'shop') { renderShop(); renderInventory(); }
+      if (btn.dataset.tab === 'jackpot') { renderJpModeInfo(); renderJpItemGrid(); renderJpEntries(); drawWheel(); updateCountdownDisplay(); }
+    });
+  });
 
-  // ── FREE BUTTON ──
-  const COOLDOWN_KEY = 'casino_free_cooldown';
-  const COOLDOWN_MS  = 300_000;
-  const freeBtn      = document.getElementById('freeBtn');
-
-  function startCooldown(remaining) {
-    freeBtn.disabled = true;
-    const interval = setInterval(() => {
-      remaining -= 1000;
-      if (remaining <= 0) {
-        clearInterval(interval);
-        freeBtn.disabled = false;
-        freeBtn.textContent = 'ODBIERZ DARMOWY BONUS';
+  // ── FREE BONUS ──
+  const FREE_KEY = 'casino_free_cooldown';
+  const FREE_AMOUNT = 500;
+  const FREE_CD = 5 * 60 * 1000;
+  function initFreeBtn() {
+    const btn = document.getElementById('freeBtn');
+    function tick() {
+      const last = parseInt(localStorage.getItem(FREE_KEY) || '0');
+      const diff = Date.now() - last;
+      if (diff >= FREE_CD) {
+        btn.disabled = false;
+        btn.textContent = 'ODBIERZ DARMOWY BONUS';
       } else {
-        const m = Math.floor(remaining / 60000);
-        const s = Math.ceil((remaining % 60000) / 1000);
-        freeBtn.textContent = `POCZEKAJ ${m}:${String(s).padStart(2, '0')}`;
+        btn.disabled = true;
+        const s = Math.ceil((FREE_CD - diff) / 1000);
+        const m = Math.floor(s / 60), sec = s % 60;
+        btn.textContent = `Następny bonus za ${m}:${String(sec).padStart(2,'0')}`;
       }
-    }, 1000);
-    const m = Math.floor(remaining / 60000);
-    const s = Math.ceil((remaining % 60000) / 1000);
-    freeBtn.textContent = `POCZEKAJ ${m}:${String(s).padStart(2, '0')}`;
-  }
-
-  // restore cooldown on page load
-  const savedCooldown = localStorage.getItem(COOLDOWN_KEY);
-  if (savedCooldown) {
-    const remaining = parseInt(savedCooldown, 10) - Date.now();
-    if (remaining > 0) startCooldown(remaining);
-    else localStorage.removeItem(COOLDOWN_KEY);
-  }
-
-  freeBtn.addEventListener('click', () => {
-    setBalance(getBalance() + 1000);
-    showToast('+1000 PKT dodane!');
-    const expires = Date.now() + COOLDOWN_MS;
-    localStorage.setItem(COOLDOWN_KEY, String(expires));
-    startCooldown(COOLDOWN_MS);
-  });
-
-  // ── GAMES ──
-  const games = [
-    { icon: '🚀', name: 'Crash',        href: 'crash.html',     active: true  },
-    { icon: '🎡', name: 'Ruletka',      href: 'roulette.html',  active: true  },
-    { icon: '💣', name: 'Mines',        href: 'mines.html',     active: true  },
-    { icon: '🃏', name: 'Blackjack',    href: 'blackjack.html', active: true  },
-    { icon: '😈', name: 'Lil Demon',    href: 'lildemon.html',  active: true  },
-    { icon: '🎰', name: 'Slots',        href: '#',              active: false  },
-    { icon: '🎲', name: 'Kości',        href: 'dice.html',      active: true  },
-    { icon: '🎯', name: 'Hi-Lo',        href: 'hilo.html',      active: true  },
-    { icon: '💰', name: 'Cash Collect', href: '#',              active: false },
-  ];
-
-  const grid = document.getElementById('gamesGrid');
-  games.forEach(g => {
-    if (g.active) {
-      const card = document.createElement('a');
-      card.className = 'game-card active';
-      card.href = g.href;
-      card.innerHTML = `<span class="game-icon">${g.icon}</span>
-         <span class="game-name">${g.name}</span>
-         <span class="play-btn">GRAJ</span>`;
-      grid.appendChild(card);
-    } else {
-      const card = document.createElement('div');
-      card.className = 'game-card inactive';
-      card.innerHTML = `<span class="lock-icon">🔒</span>
-         <span class="game-icon">${g.icon}</span>
-         <span class="game-name">${g.name}</span>
-         <span class="soon-badge">Wkrótce</span>`;
-      grid.appendChild(card);
     }
-  });
+    btn.addEventListener('click', () => {
+      setBalance(getBalance() + FREE_AMOUNT);
+      localStorage.setItem(FREE_KEY, Date.now());
+      showToast(`+${FREE_AMOUNT} PKT odebrano!`);
+      tick();
+    });
+    tick();
+    setInterval(tick, 1000);
+  }
+
+  // ── GAMES GRID ──
+  const GAMES = [
+    { name: 'Crash', icon: '🚀', file: 'crash.html', active: true },
+    { name: 'Ruletka', icon: '🎡', file: 'roulette.html', active: true },
+    { name: 'Mines', icon: '💣', file: 'mines.html', active: true },
+    { name: 'Blackjack', icon: '🃏', file: 'blackjack.html', active: true },
+    { name: 'Lil Demon', icon: '😈', file: 'lildemon.html', active: true },
+    { name: 'Kości', icon: '🎲', file: 'dice.html', active: true },
+    { name: 'Hi-Lo', icon: '🔼', file: 'hilo.html', active: true },
+    { name: 'Slots', icon: '🎰', file: 'slots.html', active: false },
+    { name: 'Cash Collect', icon: '💰', file: 'cashcollect.html', active: false },
+    { name: 'Plinko', icon: '🔵', file: 'plinko.html', active: true },
+  ];
+  function renderGames() {
+    const grid = document.getElementById('gamesGrid');
+    grid.innerHTML = GAMES.map(g => g.active
+      ? `<a class="game-card active" href="${g.file}">
+           <div class="game-icon">${g.icon}</div>
+           <div class="game-name">${g.name}</div>
+           <div class="play-btn">GRAJ</div>
+         </a>`
+      : `<div class="game-card inactive">
+           <div class="game-icon">${g.icon}</div>
+           <div class="game-name">${g.name}</div>
+           <div class="soon-badge">Wkrótce</div>
+         </div>`
+    ).join('');
+  }
 
   // ── LEADERBOARD ──
-  const defaultLeaders = [
-    { name: 'Marek_PL',   score: 482_000 },
-    { name: 'xKing99',    score: 310_500 },
-    { name: 'LuckyAnia',  score: 275_200 },
-    { name: 'NeonWolf',   score: 198_750 },
-    { name: 'CasinoJan',  score: 134_000 },
+  const LB = [
+    { name: 'KrólNocny', score: '2 840 000' },
+    { name: 'ShadowBet', score: '1 190 000' },
+    { name: 'NeonWolf', score: '875 500' },
+    { name: 'CryptoAce', score: '540 200' },
+    { name: 'LuckyPL', score: '312 000' },
   ];
+  function renderLeaderboard() {
+    const ranks = ['gold','silver','bronze','',''];
+    document.getElementById('leaderboardList').innerHTML = LB.map((e,i) =>
+      `<div class="lb-row">
+        <div class="lb-rank ${ranks[i]}">${i+1}</div>
+        <div class="lb-name">${e.name}</div>
+        <div class="lb-score">${e.score}</div>
+       </div>`
+    ).join('');
+  }
 
-  const rankClasses = ['gold', 'silver', 'bronze', '', ''];
-  const lbList = document.getElementById('leaderboardList');
+  // ── SHOP ──
+  const INV_KEY = 'casino_inventory';
+  const SHOP_ITEMS = [
+    { id: 'silver_coin',  icon: '🪙', name: 'Srebrna Moneta', desc: 'Podstawowy żeton do jackpota',  price: 200  },
+    { id: 'gold_nugget',  icon: '🥇', name: 'Złoty Samorodek', desc: 'Solidna inwestycja',           price: 500  },
+    { id: 'ruby',         icon: '💎', name: 'Rubin',           desc: 'Cenny kamień szlachetny',      price: 1500 },
+    { id: 'demon_skull',  icon: '💀', name: 'Czaszka Demona',  desc: 'Mroczna moc w twoich rękach', price: 3000 },
+    { id: 'diamond',      icon: '🔷', name: 'Diament',         desc: 'Najczystszy klejnot',          price: 5000 },
+    { id: 'crown',        icon: '👑', name: 'Korona',          desc: 'Symbol absolutnej władzy',     price: 10000 },
+  ];
+  const getInventory = () => JSON.parse(localStorage.getItem(INV_KEY) || '{}');
+  const setInventory = v => localStorage.setItem(INV_KEY, JSON.stringify(v));
 
-  defaultLeaders.forEach((p, i) => {
-    const row = document.createElement('div');
-    row.className = 'lb-row';
-    row.innerHTML = `
-      <span class="lb-rank ${rankClasses[i]}">#${i + 1}</span>
-      <span class="lb-name">${p.name}</span>
-      <span class="lb-score">${p.score.toLocaleString('pl-PL')}</span>
-    `;
-    lbList.appendChild(row);
+  function renderShop() {
+    const inv = getInventory();
+    const bal = getBalance();
+    document.getElementById('shopGrid').innerHTML = SHOP_ITEMS.map(item => {
+      const owned = inv[item.id] || 0;
+      const canBuy = bal >= item.price;
+      return `<div class="shop-item">
+        <div class="shop-item-icon">${item.icon}</div>
+        <div class="shop-item-name">${item.name}</div>
+        <div class="shop-item-desc">${item.desc}</div>
+        <div class="shop-item-price">${item.price.toLocaleString('pl-PL')} PKT</div>
+        <div class="shop-item-owned">Posiadasz: ${owned}</div>
+        <button class="shop-buy-btn" ${canBuy ? '' : 'disabled'} onclick="buyItem('${item.id}')">KUP</button>
+      </div>`;
+    }).join('');
+  }
+
+  function renderInventory() {
+    const inv = getInventory();
+    const bar = document.getElementById('inventoryBar');
+    const empty = document.getElementById('invEmpty');
+    const chips = SHOP_ITEMS.filter(i => (inv[i.id] || 0) > 0);
+    if (chips.length === 0) {
+      empty.style.display = '';
+      bar.querySelectorAll('.inv-chip').forEach(c => c.remove());
+    } else {
+      empty.style.display = 'none';
+      bar.querySelectorAll('.inv-chip').forEach(c => c.remove());
+      chips.forEach(item => {
+        const chip = document.createElement('div');
+        chip.className = 'inv-chip';
+        chip.innerHTML = `${item.icon} ${item.name} <span>×${inv[item.id]}</span>`;
+        bar.appendChild(chip);
+      });
+    }
+  }
+
+  function buyItem(id) {
+    const item = SHOP_ITEMS.find(i => i.id === id);
+    const bal = getBalance();
+    if (bal < item.price) return;
+    setBalance(bal - item.price);
+    const inv = getInventory();
+    inv[id] = (inv[id] || 0) + 1;
+    setInventory(inv);
+    showToast(`Kupiono: ${item.icon} ${item.name}`);
+    renderShop();
+    renderInventory();
+  }
+
+  // ── JACKPOT ──
+  const JP_COLORS = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db','#9b59b6','#e91e63','#00bcd4','#8bc34a'];
+  let jpEntries = [];
+  let jpSpinning = false;
+  let jpBotTimer = null;
+  let jpSelectedItems = {};
+  let jpCurrentMode = 'low';
+
+  const JP_MODES = {
+    low:  { label: 'Low',  cap: 25000,  minEntry: 0,     color: '#2ecc71', botItems: ['silver_coin','gold_nugget'] },
+    mid:  { label: 'Mid',  cap: 50000,  minEntry: 2000,  color: '#3498db', botItems: ['gold_nugget','ruby','demon_skull'] },
+    high: { label: 'High', cap: 100000, minEntry: 10000, color: '#ffd700', botItems: ['demon_skull','diamond','crown'] },
+  };
+
+  const BOT_NAMES = ['ShadowBot','NeonWolf','CryptoAce','LuckyPL','DarkHorse','GoldRush','NightOwl','IronFist'];
+  const BOT_AVATARS = ['🤖','🐺','🦊','🎩','🐴','💰','🦉','👊'];
+
+  function getItemValue(id) { return (SHOP_ITEMS.find(i => i.id === id) || {price:0}).price; }
+  function jpPoolTotal() { return jpEntries.reduce((s,e) => s + e.value, 0); }
+  function jpMode() { return JP_MODES[jpCurrentMode]; }
+
+  // mode buttons
+  document.querySelectorAll('.jp-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (jpSpinning) return;
+      jpCurrentMode = btn.dataset.mode;
+      document.querySelectorAll('.jp-mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      jpEntries = [];
+      jpSelectedItems = {};
+      clearInterval(jpBotTimer);
+      document.getElementById('jpWinnerBanner').classList.remove('show');
+      renderJpModeInfo();
+      renderJpItemGrid();
+      renderJpEntries();
+      drawWheel();
+      updateJpSpinBtn();
+      startBotTimer();
+    });
   });
 
+  function renderJpModeInfo() {
+    const m = jpMode();
+    const total = jpPoolTotal();
+    const pct = Math.min(100, (total / m.cap) * 100).toFixed(0);
+    document.getElementById('jpModeInfo').textContent =
+      `${m.label}: pula ${total.toLocaleString('pl-PL')} / ${m.cap.toLocaleString('pl-PL')} PKT` +
+      (m.minEntry > 0 ? ` · min. wejście ${m.minEntry.toLocaleString('pl-PL')} PKT` : ' · brak limitu wejścia') +
+      ` · ${pct}% zapełnienia`;
+    document.getElementById('jpProgressBar').style.width = pct + '%';
+    document.getElementById('jpProgressBar').style.background =
+      jpCurrentMode === 'low' ? 'linear-gradient(90deg,#1a7a40,#2ecc71)' :
+      jpCurrentMode === 'mid' ? 'linear-gradient(90deg,#1a4a8a,#3498db)' :
+      'linear-gradient(90deg,#aa8800,#ffd700)';
+  }
+
+  function renderJpItemGrid() {
+    const inv = getInventory();
+    const grid = document.getElementById('jpItemGrid');
+    const m = jpMode();
+    const available = SHOP_ITEMS.filter(i => (inv[i.id] || 0) > 0);
+    if (available.length === 0) {
+      grid.innerHTML = '<span style="font-size:.75rem;color:#334">Brak przedmiotów — kup coś w Sklepie</span>';
+      document.getElementById('jpBetBtn').disabled = true;
+      return;
+    }
+    grid.innerHTML = available.map(item => {
+      const cnt = inv[item.id];
+      const sel = jpSelectedItems[item.id] || 0;
+      return `<button class="jp-item-btn ${sel > 0 ? 'selected' : ''}" onclick="jpToggleItem('${item.id}')" ${jpSpinning ? 'disabled' : ''}>
+        ${item.icon} ${item.name} <span style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#ffd700">×${cnt}</span>
+      </button>`;
+    }).join('');
+    updateJpBetBtn();
+  }
+
+  function jpToggleItem(id) {
+    const inv = getInventory();
+    const owned = inv[id] || 0;
+    const sel = jpSelectedItems[id] || 0;
+    jpSelectedItems[id] = sel < owned ? sel + 1 : 0;
+    if (jpSelectedItems[id] === 0) delete jpSelectedItems[id];
+    renderJpItemGrid();
+  }
+
+  function updateJpBetBtn() {
+    const hasItems = Object.keys(jpSelectedItems).length > 0;
+    // check min entry
+    let selValue = 0;
+    for (const [id, cnt] of Object.entries(jpSelectedItems)) selValue += getItemValue(id) * cnt;
+    const m = jpMode();
+    const meetsMin = selValue >= m.minEntry;
+    const poolLeft = m.cap - jpPoolTotal();
+    const fitsPool = selValue <= poolLeft;
+    const btn = document.getElementById('jpBetBtn');
+    btn.disabled = !hasItems || !meetsMin || !fitsPool || jpSpinning;
+    if (hasItems && !meetsMin && m.minEntry > 0)
+      btn.title = `Min. wejście: ${m.minEntry.toLocaleString('pl-PL')} PKT`;
+    else if (hasItems && !fitsPool)
+      btn.title = 'Pula prawie pełna — zmniejsz stawkę';
+    else btn.title = '';
+  }
+
+  document.getElementById('jpBetBtn').addEventListener('click', () => {
+    if (jpSpinning) return;
+    const inv = getInventory();
+    let value = 0;
+    const items = [];
+    for (const [id, cnt] of Object.entries(jpSelectedItems)) {
+      if (!cnt) continue;
+      if ((inv[id] || 0) < cnt) { showToast('Brak przedmiotów!'); return; }
+      inv[id] -= cnt;
+      if (inv[id] === 0) delete inv[id];
+      for (let i = 0; i < cnt; i++) items.push(id);
+      value += getItemValue(id) * cnt;
+    }
+    const m = jpMode();
+    if (value < m.minEntry) { showToast(`Min. wejście: ${m.minEntry.toLocaleString('pl-PL')} PKT`, true); return; }
+    setInventory(inv);
+    jpSelectedItems = {};
+    const color = JP_COLORS[jpEntries.length % JP_COLORS.length];
+    jpEntries.push({ name: 'Ty', avatar: '🧑', items, value, color });
+    renderJpItemGrid();
+    renderJpEntries();
+    renderJpModeInfo();
+    drawWheel();
+    updateJpSpinBtn();
+    showToast(`Dodano do puli: ${value.toLocaleString('pl-PL')} PKT`);
+    startBotTimer();
+  });
+
+  function checkAutoSpin() { /* replaced by 60s countdown */ }
+
+  function renderJpEntries() {
+    const total = jpPoolTotal();
+    const el = document.getElementById('jpEntries');
+    if (jpEntries.length === 0) {
+      el.innerHTML = '<div style="font-size:.75rem;color:#334;padding:8px 0">Brak uczestników — bądź pierwszy!</div>';
+      document.getElementById('jpPoolDisplay').textContent = '0 PKT';
+      document.getElementById('jpPoolSub').textContent = 'Obstaw przedmioty żeby dołączyć';
+      renderJpModeInfo();
+      return;
+    }
+    document.getElementById('jpPoolDisplay').textContent = total.toLocaleString('pl-PL') + ' PKT';
+    document.getElementById('jpPoolSub').textContent = `${jpEntries.length} uczestnik${jpEntries.length === 1 ? '' : 'ów'}`;
+    el.innerHTML = jpEntries.map(e => {
+      const pct = total > 0 ? ((e.value / total) * 100).toFixed(1) : '0.0';
+      const icons = [...new Set(e.items)].map(id => SHOP_ITEMS.find(i=>i.id===id)?.icon || '').join('');
+      return `<div class="jp-entry" style="border-left:3px solid ${e.color}">
+        <div class="jp-entry-avatar">${e.avatar}</div>
+        <div class="jp-entry-name">${e.name}</div>
+        <div class="jp-entry-items">${icons}</div>
+        <div class="jp-entry-chance">${pct}%</div>
+      </div>`;
+    }).join('');
+    renderJpModeInfo();
+  }
+
+  function updateJpSpinBtn() { /* no-op, spin is automatic */ }
+
+  // ── WHEEL ──
+  function drawWheel(angle) {
+    const canvas = document.getElementById('jpCanvas');
+    const ctx = canvas.getContext('2d');
+    const cx = 130, cy = 130, r = 120;
+    ctx.clearRect(0, 0, 260, 260);
+    const total = jpPoolTotal();
+    if (total === 0 || jpEntries.length === 0) {
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.fillStyle = '#111827'; ctx.fill();
+      ctx.strokeStyle = '#1a2535'; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = '#334'; ctx.font = '13px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Brak uczestników', cx, cy);
+      return;
+    }
+    let start = angle || 0;
+    jpEntries.forEach(e => {
+      const slice = (e.value / total) * Math.PI * 2;
+      ctx.beginPath(); ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, start, start + slice);
+      ctx.closePath(); ctx.fillStyle = e.color; ctx.fill();
+      ctx.strokeStyle = '#0a0e17'; ctx.lineWidth = 2; ctx.stroke();
+      const mid = start + slice / 2;
+      if (slice > 0.2) {
+        ctx.save(); ctx.translate(cx + Math.cos(mid) * r * 0.65, cy + Math.sin(mid) * r * 0.65);
+        ctx.rotate(mid + Math.PI/2); ctx.fillStyle = '#fff';
+        ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(e.name.length > 8 ? e.name.slice(0,7)+'…' : e.name, 0, 0);
+        ctx.restore();
+      }
+      start += slice;
+    });
+    ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI*2);
+    ctx.fillStyle = '#0a0e17'; ctx.fill();
+    ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + r + 10, cy);
+    ctx.lineTo(cx + r - 4, cy - 8); ctx.lineTo(cx + r - 4, cy + 8);
+    ctx.closePath(); ctx.fillStyle = '#ffd700'; ctx.fill();
+  }
+
+  // ── 60s AUTO-SPIN COUNTDOWN ──
+  let jpCountdownSec = 60;
+  let jpCountdownTimer = null;
+
+  function startCountdown() {
+    clearInterval(jpCountdownTimer);
+    jpCountdownSec = 60;
+    updateCountdownDisplay();
+    jpCountdownTimer = setInterval(() => {
+      if (jpSpinning) return;
+      jpCountdownSec--;
+      updateCountdownDisplay();
+      if (jpCountdownSec <= 0) {
+        clearInterval(jpCountdownTimer);
+        if (jpEntries.length >= 2) spinWheel();
+        else { jpCountdownSec = 60; startCountdown(); }
+      }
+    }, 1000);
+  }
+
+  function updateCountdownDisplay() {
+    const el = document.getElementById('jpCountdown');
+    if (jpSpinning) { el.textContent = '🎰 Losowanie...'; return; }
+    if (jpEntries.length < 2) {
+      el.textContent = `⏱ Czeka na graczy...`;
+    } else {
+      el.textContent = `⏱ Losowanie za ${jpCountdownSec}s`;
+    }
+  }
+
+  document.getElementById('jpSpinBtn') && document.getElementById('jpSpinBtn').addEventListener('click', spinWheel);
+
+  function spinWheel() {
+    if (jpSpinning || jpEntries.length < 2) return;
+    jpSpinning = true;
+    clearInterval(jpBotTimer);
+    clearInterval(jpCountdownTimer);
+    updateCountdownDisplay();
+    document.getElementById('jpBetBtn').disabled = true;
+    document.getElementById('jpWinnerBanner').classList.remove('show');
+
+    const total = jpPoolTotal();
+    let rand = Math.random() * total;
+    let winner = jpEntries[jpEntries.length - 1];
+    for (const e of jpEntries) { rand -= e.value; if (rand <= 0) { winner = e; break; } }
+
+    let winnerStart = 0, winnerSlice = 0, acc = 0;
+    for (const e of jpEntries) {
+      const slice = (e.value / total) * Math.PI * 2;
+      if (e === winner) { winnerStart = acc; winnerSlice = slice; break; }
+      acc += slice;
+    }
+    const targetAngle = -(winnerStart + winnerSlice / 2);
+    const spins = 6 + Math.random() * 4;
+    const finalAngle = targetAngle - spins * Math.PI * 2;
+    const duration = 5000;
+    const startTime = performance.now();
+
+    function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+    function frame(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      drawWheel((finalAngle) * easeOut(t));
+      if (t < 1) { requestAnimationFrame(frame); return; }
+      jpSpinning = false;
+      showWinner(winner);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function showWinner(winner) {
+    const prize = jpPoolTotal();
+    document.getElementById('jpWinnerName').textContent = winner.avatar + ' ' + winner.name;
+    document.getElementById('jpWinnerPrize').textContent = `Wygrywa ${prize.toLocaleString('pl-PL')} PKT`;
+    document.getElementById('jpWinnerBanner').classList.add('show');
+    if (winner.name === 'Ty') {
+      setBalance(getBalance() + prize);
+      showToast(`🏆 Wygrałeś ${prize.toLocaleString('pl-PL')} PKT!`);
+    } else {
+      showToast(`${winner.avatar} ${winner.name} wygrał jackpota!`);
+    }
+    setTimeout(() => {
+      jpEntries = [];
+      jpSelectedItems = {};
+      document.getElementById('jpWinnerBanner').classList.remove('show');
+      renderJpEntries();
+      renderJpItemGrid();
+      drawWheel();
+      updateJpSpinBtn();
+      startBotTimer();
+      startCountdown();
+    }, 6000);
+  }
+
+  // ── BOTS ──
+  function startBotTimer() {
+    clearInterval(jpBotTimer);
+    if (jpSpinning) return;
+    const delay = 3000 + Math.random() * 5000;
+    jpBotTimer = setTimeout(() => {
+      if (jpSpinning || jpEntries.length >= 8) return;
+      addBot();
+      startBotTimer();
+    }, delay);
+  }
+
+  function addBot() {
+    const m = jpMode();
+    const poolLeft = m.cap - jpPoolTotal();
+    if (poolLeft <= 0) return;
+    const idx = Math.floor(Math.random() * BOT_NAMES.length);
+    const name = BOT_NAMES[idx];
+    if (jpEntries.find(e => e.name === name)) return;
+    const eligibleItems = SHOP_ITEMS.filter(i => m.botItems.includes(i.id));
+    const count = 1 + Math.floor(Math.random() * 3);
+    const items = [];
+    let value = 0;
+    for (let i = 0; i < count; i++) {
+      const item = eligibleItems[Math.floor(Math.random() * eligibleItems.length)];
+      if (value + item.price > poolLeft) break;
+      items.push(item.id);
+      value += item.price;
+    }
+    if (value < m.minEntry || items.length === 0) return;
+    const color = JP_COLORS[jpEntries.length % JP_COLORS.length];
+    jpEntries.push({ name, avatar: BOT_AVATARS[idx], items, value, color });
+    renderJpEntries();
+    drawWheel();
+    updateJpSpinBtn();
+    checkAutoSpin();
+  }
   // ── TOAST ──
-  function showToast(msg) {
+  function showToast(msg, isError) {
     const t = document.getElementById('toast');
     t.textContent = msg;
+    t.style.background = isError ? '#ff3355' : '#00ff88';
+    t.style.color = '#0a0e17';
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2200);
+    setTimeout(() => t.classList.remove('show'), 2800);
   }
+
+  // ── HIDDEN TESTER BUTTON ──
+  const tester = document.createElement('button');
+  Object.assign(tester.style, { position:'fixed', bottom:'0', left:'0', width:'40px', height:'40px', opacity:'0', cursor:'pointer', zIndex:'9999', background:'transparent', border:'none' });
+  tester.addEventListener('click', () => { setBalance(getBalance() + 100000); location.reload(); });
+  document.body.appendChild(tester);
+
+  // ── INIT ──
+  renderBalance();
+  initFreeBtn();
+  renderGames();
+  renderLeaderboard();
+  startCountdown();
 </script>
-<button onclick="(()=>{const k='casino_balance';localStorage.setItem(k,String((parseInt(localStorage.getItem(k)||'0',10)+100000)));location.reload();})()" style="position:fixed;bottom:0;left:0;width:40px;height:40px;opacity:0;cursor:default;border:none;background:transparent;z-index:9999"></button>
 </body>
+</html>
