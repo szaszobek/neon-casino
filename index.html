@@ -172,12 +172,32 @@
     .jp-item-btn {
       display: flex; align-items: center; gap: 6px;
       background: #0d1220; border: 1px solid #1e2d40; border-radius: 8px;
-      padding: 7px 12px; font-size: .78rem; font-weight: 700; color: #778;
+      padding: 7px 10px; font-size: .78rem; font-weight: 700; color: #778;
       cursor: pointer; transition: border-color .2s, color .2s;
     }
     .jp-item-btn:hover:not(:disabled) { border-color: #ffd70066; color: #ffd700; }
     .jp-item-btn.selected { border-color: #ffd700; color: #ffd700; background: #1a150022; }
     .jp-item-btn:disabled { opacity: .3; cursor: not-allowed; }
+    .jp-item-counter {
+      display: flex; align-items: center; gap: 4px; margin-left: 4px;
+    }
+    .jp-item-counter button {
+      width: 20px; height: 20px; border-radius: 4px; border: 1px solid #ffd70066;
+      background: #0a0e17; color: #ffd700; font-size: .85rem; font-weight: 800;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      padding: 0; line-height: 1;
+    }
+    .jp-item-counter button:hover { background: #ffd700; color: #0a0e17; }
+    .jp-item-counter .jp-sel-count {
+      font-family: 'JetBrains Mono', monospace; font-size: .75rem; color: #ffd700;
+      min-width: 14px; text-align: center;
+    }
+    .jp-bet-total {
+      font-size: .8rem; font-weight: 700; color: #aab;
+      padding: 8px 12px; background: #0d1220; border: 1px solid #1e2d40;
+      border-radius: 8px; text-align: center;
+    }
+    .jp-bet-total span { font-family: 'JetBrains Mono', monospace; color: #ffd700; }
 
     .jp-submit {
       width: 100%; padding: 13px; background: linear-gradient(135deg, #aa8800, #ffd700);
@@ -317,6 +337,7 @@
             <div class="jp-bet-form">
               <div class="jp-select-label">Wybierz co obstawiasz:</div>
               <div class="jp-item-grid" id="jpItemGrid"></div>
+              <div class="jp-bet-total" id="jpBetTotal">Łącznie: <span>0 PKT</span></div>
               <button class="jp-submit" id="jpBetBtn" disabled>WRZUĆ DO PULI</button>
             </div>
           </div>
@@ -582,7 +603,6 @@
   function renderJpItemGrid() {
     const inv = getInventory();
     const grid = document.getElementById('jpItemGrid');
-    const m = jpMode();
     const available = SHOP_ITEMS.filter(i => (inv[i.id] || 0) > 0);
     if (available.length === 0) {
       grid.innerHTML = '<span style="font-size:.75rem;color:#334">Brak przedmiotów — kup coś w Sklepie</span>';
@@ -590,33 +610,45 @@
       return;
     }
     grid.innerHTML = available.map(item => {
-      const cnt = inv[item.id];
+      const owned = inv[item.id];
       const sel = jpSelectedItems[item.id] || 0;
-      return `<button class="jp-item-btn ${sel > 0 ? 'selected' : ''}" onclick="jpToggleItem('${item.id}')" ${jpSpinning ? 'disabled' : ''}>
-        ${item.icon} ${item.name} <span style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#ffd700">×${cnt}</span>
-      </button>`;
+      return `<div class="jp-item-btn ${sel > 0 ? 'selected' : ''}" style="flex-direction:column;gap:4px;padding:8px 10px;align-items:flex-start">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span>${item.icon}</span>
+          <span>${item.name}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.68rem;color:#556">×${owned}</span>
+        </div>
+        <div class="jp-item-counter">
+          <button onclick="jpAdjust('${item.id}',-1)" ${jpSpinning||sel<=0?'disabled':''}>−</button>
+          <span class="jp-sel-count">${sel}</span>
+          <button onclick="jpAdjust('${item.id}',1)" ${jpSpinning||sel>=owned?'disabled':''}>+</button>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.68rem;color:#ffd700;margin-left:4px">${sel>0?(sel*item.price).toLocaleString('pl-PL')+' PKT':''}</span>
+        </div>
+      </div>`;
     }).join('');
     updateJpBetBtn();
   }
 
-  function jpToggleItem(id) {
+  function jpAdjust(id, delta) {
     const inv = getInventory();
     const owned = inv[id] || 0;
     const sel = jpSelectedItems[id] || 0;
-    jpSelectedItems[id] = sel < owned ? sel + 1 : 0;
-    if (jpSelectedItems[id] === 0) delete jpSelectedItems[id];
+    const next = Math.max(0, Math.min(owned, sel + delta));
+    if (next === 0) delete jpSelectedItems[id];
+    else jpSelectedItems[id] = next;
     renderJpItemGrid();
   }
 
+  function jpToggleItem(id) { jpAdjust(id, 1); } // kept for compat
+
   function updateJpBetBtn() {
-    const hasItems = Object.keys(jpSelectedItems).length > 0;
-    // check min entry
     let selValue = 0;
     for (const [id, cnt] of Object.entries(jpSelectedItems)) selValue += getItemValue(id) * cnt;
     const m = jpMode();
     const meetsMin = selValue >= m.minEntry;
     const poolLeft = m.cap > 0 ? m.cap - jpPoolTotal() : Infinity;
     const fitsPool = poolLeft === Infinity || selValue <= poolLeft;
+    const hasItems = selValue > 0;
     const btn = document.getElementById('jpBetBtn');
     btn.disabled = !hasItems || !meetsMin || !fitsPool || jpSpinning;
     if (hasItems && !meetsMin && m.minEntry > 0)
@@ -624,6 +656,9 @@
     else if (hasItems && !fitsPool)
       btn.title = 'Pula prawie pełna — zmniejsz stawkę';
     else btn.title = '';
+    // update total display
+    const totalEl = document.getElementById('jpBetTotal');
+    if (totalEl) totalEl.innerHTML = `Łącznie: <span>${selValue > 0 ? selValue.toLocaleString('pl-PL') + ' PKT' : '0 PKT'}</span>`;
   }
 
   document.getElementById('jpBetBtn').addEventListener('click', () => {
