@@ -643,8 +643,17 @@
     if (value < m.minEntry) { showToast(`Min. wejście: ${m.minEntry.toLocaleString('pl-PL')} PKT`, true); return; }
     setInventory(inv);
     jpSelectedItems = {};
-    const color = JP_COLORS[jpEntries.length % JP_COLORS.length];
-    jpEntries.push({ name: 'Ty', avatar: '🧑', items, value, color });
+
+    // merge into existing player entry instead of adding new slot
+    const existing = jpEntries.find(e => e.name === 'Ty');
+    if (existing) {
+      existing.value += value;
+      existing.items = existing.items.concat(items);
+    } else {
+      const color = JP_COLORS[jpEntries.length % JP_COLORS.length];
+      jpEntries.push({ name: 'Ty', avatar: '🧑', items, value, color });
+    }
+
     renderJpItemGrid();
     renderJpEntries();
     renderJpModeInfo();
@@ -702,7 +711,12 @@
   function updateJpSpinBtn() { /* no-op, spin is automatic */ }
 
   // ── WHEEL ──
-  function drawWheel(angle) {
+  // Pointer is drawn at the TOP of the wheel (angle = -π/2).
+  // Segments start from `startAngle` and go clockwise.
+  // To land winner under pointer: startAngle + winnerMid = -π/2  →  startAngle = -π/2 - winnerMid
+  const POINTER_ANGLE = -Math.PI / 2;
+
+  function drawWheel(startAngle) {
     const canvas = document.getElementById('jpCanvas');
     const ctx = canvas.getContext('2d');
     const cx = 130, cy = 130, r = 120;
@@ -714,9 +728,14 @@
       ctx.strokeStyle = '#1a2535'; ctx.lineWidth = 3; ctx.stroke();
       ctx.fillStyle = '#334'; ctx.font = '13px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('Brak uczestników', cx, cy);
+      // draw pointer at top
+      ctx.beginPath(); ctx.moveTo(cx, cy - r - 10);
+      ctx.lineTo(cx - 8, cy - r + 4); ctx.lineTo(cx + 8, cy - r + 4);
+      ctx.closePath(); ctx.fillStyle = '#ffd700'; ctx.fill();
       return;
     }
-    let start = angle || 0;
+    const sa = (startAngle === undefined) ? 0 : startAngle;
+    let start = sa;
     jpEntries.forEach(e => {
       const slice = (e.value / total) * Math.PI * 2;
       ctx.beginPath(); ctx.moveTo(cx, cy);
@@ -724,20 +743,24 @@
       ctx.closePath(); ctx.fillStyle = e.color; ctx.fill();
       ctx.strokeStyle = '#0a0e17'; ctx.lineWidth = 2; ctx.stroke();
       const mid = start + slice / 2;
-      if (slice > 0.2) {
-        ctx.save(); ctx.translate(cx + Math.cos(mid) * r * 0.65, cy + Math.sin(mid) * r * 0.65);
-        ctx.rotate(mid + Math.PI/2); ctx.fillStyle = '#fff';
-        ctx.font = 'bold 11px Inter'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      if (slice > 0.18) {
+        ctx.save();
+        ctx.translate(cx + Math.cos(mid) * r * 0.65, cy + Math.sin(mid) * r * 0.65);
+        ctx.rotate(mid + Math.PI / 2);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(e.name.length > 8 ? e.name.slice(0,7)+'…' : e.name, 0, 0);
         ctx.restore();
       }
       start += slice;
     });
+    // center circle
     ctx.beginPath(); ctx.arc(cx, cy, 18, 0, Math.PI*2);
     ctx.fillStyle = '#0a0e17'; ctx.fill();
     ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx + r + 10, cy);
-    ctx.lineTo(cx + r - 4, cy - 8); ctx.lineTo(cx + r - 4, cy + 8);
+    // pointer at TOP
+    ctx.beginPath(); ctx.moveTo(cx, cy - r - 10);
+    ctx.lineTo(cx - 8, cy - r + 4); ctx.lineTo(cx + 8, cy - r + 4);
     ctx.closePath(); ctx.fillStyle = '#ffd700'; ctx.fill();
   }
 
@@ -776,31 +799,35 @@
   function spinWheel() {
     if (jpSpinning || jpEntries.length < 2) return;
     jpSpinning = true;
-    clearInterval(jpBotTimer);
+    clearTimeout(jpBotTimer);
     clearInterval(jpCountdownTimer);
     updateCountdownDisplay();
     document.getElementById('jpBetBtn').disabled = true;
     document.getElementById('jpWinnerBanner').classList.remove('show');
 
     const total = jpPoolTotal();
+
+    // 1. Pick winner weighted by value
     let rand = Math.random() * total;
     let winner = jpEntries[jpEntries.length - 1];
     for (const e of jpEntries) { rand -= e.value; if (rand <= 0) { winner = e; break; } }
 
+    // 2. Find winner's angular position on the wheel (segments start at 0 by default)
     let winnerStart = 0, winnerSlice = 0, acc = 0;
     for (const e of jpEntries) {
       const slice = (e.value / total) * Math.PI * 2;
       if (e === winner) { winnerStart = acc; winnerSlice = slice; break; }
       acc += slice;
     }
-    // pointer is at angle=0 (right side of canvas)
-    // we need the winner's mid-angle to land at angle=0
-    // wheel draws segments starting from `angle` param, so we rotate the whole wheel
-    // such that winnerMid ends up at 0 → rotate by -(winnerMid)
     const winnerMid = winnerStart + winnerSlice / 2;
+
+    // 3. We need: startAngle + winnerMid = POINTER_ANGLE  (pointer is at top = -π/2)
+    //    So the wheel's startAngle at rest = POINTER_ANGLE - winnerMid
+    //    Add full spins for animation
     const spins = 6 + Math.random() * 4;
-    // final resting angle: enough full spins + correction so winnerMid hits pointer
-    const finalAngle = -(spins * Math.PI * 2 + winnerMid);
+    const restAngle = POINTER_ANGLE - winnerMid;
+    const finalAngle = restAngle - spins * Math.PI * 2;
+
     const duration = 5000;
     const startTime = performance.now();
 
@@ -809,8 +836,7 @@
       const t = Math.min((now - startTime) / duration, 1);
       drawWheel(finalAngle * easeOut(t));
       if (t < 1) { requestAnimationFrame(frame); return; }
-      // draw final resting position precisely
-      drawWheel(finalAngle);
+      drawWheel(restAngle); // snap to exact rest position
       jpSpinning = false;
       showWinner(winner);
     }
