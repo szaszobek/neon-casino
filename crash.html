@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crash – NeonCasino</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0e17;
+      color: #e0e0e0;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 28px;
+      border-bottom: 1px solid #1a2035;
+    }
+    .logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #00ff88;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+    .wallet {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #111827;
+      border: 1px solid #1e2d40;
+      border-radius: 10px;
+      padding: 9px 16px;
+    }
+    .wallet-label { font-size: 0.68rem; color: #556; text-transform: uppercase; letter-spacing: 1px; }
+    .wallet-amount { font-size: 1rem; font-weight: 700; color: #00ff88; }
+
+    .main {
+      display: flex;
+      gap: 22px;
+      max-width: 980px;
+      margin: 28px auto;
+      padding: 0 20px;
+      width: 100%;
+      align-items: flex-start;
+    }
+
+    /* ── CHART ── */
+    .chart-area { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+    .chart-wrap {
+      position: relative;
+      background: #0d1220;
+      border: 1px solid #1a2535;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    canvas#crashCanvas { display: block; width: 100%; height: 320px; }
+
+    /* multiplier overlay */
+    .multiplier-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      gap: 6px;
+    }
+
+    #multiplierDisplay {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 4rem;
+      font-weight: 800;
+      color: #00ff88;
+      text-shadow: 0 0 30px #00ff8880;
+      transition: color .15s, text-shadow .15s;
+      letter-spacing: 2px;
+    }
+    #multiplierDisplay.crashed {
+      color: #ff3355;
+      text-shadow: 0 0 30px #ff335580;
+    }
+    #multiplierDisplay.waiting {
+      color: #445566;
+      text-shadow: none;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+    }
+
+    #statusLabel {
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #445566;
+    }
+
+    /* SVG countdown ring */
+    .ring-wrap {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .ring-wrap.visible { display: flex; }
+
+    .ring-wrap svg {
+      position: absolute;
+      inset: 0;
+      transform: rotate(-90deg);
+    }
+
+    .ring-bg { fill: none; stroke: #1a2535; stroke-width: 5; }
+    .ring-fg {
+      fill: none;
+      stroke: #00ff88;
+      stroke-width: 5;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.1s linear;
+    }
+
+    .ring-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #00ff88;
+      text-align: center;
+      line-height: 1;
+    }
+    .ring-label {
+      font-size: 0.6rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #445566;
+      text-align: center;
+      margin-top: 3px;
+    }
+
+    /* ── HISTORY ── */
+    .history-wrap {
+      background: #111827;
+      border: 1px solid #1a2535;
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .history-label {
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #445566;
+      margin-bottom: 10px;
+    }
+    .history-pills { display: flex; flex-wrap: wrap; gap: 7px; }
+    .pill {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .pill.low  { background: #1f0a0a; color: #ff3355; border: 1px solid #ff335540; }
+    .pill.mid  { background: #0a1220; color: #00aaff; border: 1px solid #00aaff40; }
+    .pill.high { background: #0a1f14; color: #00ff88; border: 1px solid #00ff8840; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 215px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .panel {
+      background: #111827;
+      border: 1px solid #1a2535;
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 0.68rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #445566;
+    }
+    .field input[type="number"] {
+      width: 100%;
+      background: #0d1220;
+      border: 1px solid #1e2d40;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .field input:focus { border-color: #00ff8866; }
+    .field input:disabled { opacity: .4; cursor: not-allowed; }
+    .field input::-webkit-inner-spin-button { opacity: .4; }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #1a2535;
+      font-size: 0.82rem;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { color: #556; }
+    .stat-value { font-weight: 700; color: #e0e0e0; }
+    .stat-value.green { color: #00ff88; }
+
+    /* main action button — morphs between BET and CASHOUT */
+    #actionBtn {
+      width: 100%;
+      padding: 15px;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background .2s, color .2s, border-color .2s, box-shadow .2s, opacity .2s;
+    }
+
+    #actionBtn.mode-bet {
+      background: transparent;
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      box-shadow: 0 0 10px #00ff8830;
+    }
+    #actionBtn.mode-bet:hover:not(:disabled) {
+      background: #00ff88;
+      color: #0a0e17;
+      box-shadow: 0 0 20px #00ff8870;
+    }
+    #actionBtn.mode-cashout {
+      background: #00ff88;
+      border: none;
+      color: #0a0e17;
+      box-shadow: 0 0 18px #00ff8860;
+    }
+    #actionBtn.mode-cashout:hover:not(:disabled) { opacity: .88; }
+    #actionBtn:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* toast */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: #00ff88;
+      color: #0a0e17;
+      padding: 11px 26px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 0.88rem;
+      letter-spacing: 1px;
+      opacity: 0;
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .btn-back {
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      border: 1px solid #1e2d40;
+      border-radius: 10px;
+      color: #556;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      transition: border-color .2s, color .2s;
+    }
+    .btn-back:hover { border-color: #334; color: #aab; }
+
+    /* ── LIVE BETS ── */
+    .live-bets-wrap {
+      background: #111827;
+      border: 1px solid #1a2535;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .live-bets-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #1a2535;
+    }
+
+    .live-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #00ff88;
+      box-shadow: 0 0 6px #00ff88;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .3; }
+    }
+
+    .live-bets-title {
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #445566;
+    }
+
+    .lb-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .lb-table thead tr {
+      border-bottom: 1px solid #1a2535;
+    }
+
+    .lb-table th {
+      padding: 8px 14px;
+      text-align: left;
+      font-size: 0.65rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #334455;
+      font-weight: 700;
+    }
+
+    .lb-table th:last-child { text-align: right; }
+
+    .lb-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid #0f1825;
+      transition: background .25s, color .25s, opacity .25s;
+    }
+
+    .lb-table td:last-child { text-align: right; }
+    .lb-table tr:last-child td { border-bottom: none; }
+
+    /* states */
+    .lb-table tr.state-waiting td { color: #445566; }
+    .lb-table tr.state-in      td { color: #e0e0e0; }
+    .lb-table tr.state-won     td { background: #0a1f14; color: #00ff88; }
+    .lb-table tr.state-lost    td { background: #1f0a0a; color: #ff3355; opacity: 1; }
+    .lb-table tr.state-lost    td.bot-mult,
+    .lb-table tr.state-lost    td.bot-win { text-shadow: 0 0 8px #ff335560; }
+
+    .bot-name   { font-weight: 700; }
+    .bot-bet    { font-family: 'JetBrains Mono', monospace; }
+    .bot-mult   { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+    .bot-win    { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+    .bot-status { font-size: 0.72rem; letter-spacing: .5px; }
+
+    @media (max-width: 660px) {
+      .main { flex-direction: column; }
+      .sidebar { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">⬡ NeonCasino</a>
+  <div class="wallet">
+    <span>🪙</span>
+    <div>
+      <div class="wallet-label">Saldo</div>
+      <div class="wallet-amount" id="balanceDisplay">0 PKT</div>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- CHART + HISTORY -->
+  <div class="chart-area">
+    <div class="chart-wrap">
+      <canvas id="crashCanvas"></canvas>
+      <div class="multiplier-overlay">
+
+        <!-- countdown ring (visible during waiting phase) -->
+        <div class="ring-wrap" id="ringWrap">
+          <svg viewBox="0 0 110 110" width="110" height="110">
+            <circle class="ring-bg" cx="55" cy="55" r="48" />
+            <circle class="ring-fg" id="ringFg" cx="55" cy="55" r="48" />
+          </svg>
+          <div>
+            <div class="ring-text" id="ringText">5.0</div>
+            <div class="ring-label">następna runda</div>
+          </div>
+        </div>
+
+        <div id="multiplierDisplay">1.00×</div>
+        <div id="statusLabel">OCZEKIWANIE</div>
+      </div>
+    </div>
+
+    <div class="history-wrap">
+      <div class="history-label">Historia ostatnich gier</div>
+      <div class="history-pills" id="historyPills"></div>
+    </div>
+
+    <!-- LIVE BETS -->
+    <div class="live-bets-wrap">
+      <div class="live-bets-header">
+        <div class="live-dot"></div>
+        <span class="live-bets-title">Live Bets</span>
+      </div>
+      <table class="lb-table">
+        <thead>
+          <tr>
+            <th>Gracz</th>
+            <th>Stawka</th>
+            <th>Mnożnik</th>
+            <th>Wygrana</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="liveBetsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="panel">
+      <div class="field">
+        <label>Stawka (PKT)</label>
+        <input type="number" id="betInput" min="1" value="100" />
+      </div>
+      <div class="field">
+        <label>Auto Cashout (×)</label>
+        <input type="number" id="autoInput" min="1.01" step="0.01" value="2.00" />
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="stat-row">
+        <span class="stat-label">Mnożnik</span>
+        <span class="stat-value green" id="sideMultiplier">1.00×</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Potencjalna wypłata</span>
+        <span class="stat-value green" id="sidePayout">0 PKT</span>
+      </div>
+    </div>
+
+    <button id="actionBtn" class="mode-bet">POSTAW</button>
+    <a class="btn-back" href="index.html">← Powrót do Lobby</a>
+  </aside>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── BALANCE ──
+  const BAL_KEY    = 'casino_balance';
+  const getBalance = () => parseInt(localStorage.getItem(BAL_KEY) || '25000', 10);
+  const setBalance = v  => { localStorage.setItem(BAL_KEY, String(v)); renderBalance(); };
+  const renderBalance  = () => {
+    document.getElementById('balanceDisplay').textContent =
+      getBalance().toLocaleString('pl-PL') + ' PKT';
+  };
+  renderBalance();
+
+  // ── CANVAS ──
+  const canvas = document.getElementById('crashCanvas');
+  const ctx    = canvas.getContext('2d');
+  function resizeCanvas() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  // ── SVG RING ──
+  const RING_R          = 48;
+  const RING_CIRC       = 2 * Math.PI * RING_R;
+  const ringFg          = document.getElementById('ringFg');
+  const ringText        = document.getElementById('ringText');
+  const ringWrap        = document.getElementById('ringWrap');
+  ringFg.style.strokeDasharray  = RING_CIRC;
+  ringFg.style.strokeDashoffset = 0;
+
+  function setRing(fraction) {                          // fraction 0→1 (1 = full)
+    ringFg.style.strokeDashoffset = RING_CIRC * (1 - fraction);
+  }
+
+  // ── STATE ──
+  const WAIT_DURATION = 5000;   // ms
+  let phase       = 'idle';     // waiting | running | crashed
+  let crashAt     = 2.0;
+  let multiplier  = 1.0;
+  let playerBet   = 0;
+  let playerIn    = false;
+  let cashedOut   = false;
+  let autoCashout = 0;          // 0 = disabled
+  let roundStart  = 0;
+  let waitStart   = 0;
+  let animId      = null;
+  let chartPoints = [];
+  const history   = [];
+
+  // ── CRASH POINT ──
+  function genCrashPoint() {
+    const r = Math.random();
+    if (r < 0.01) return 1.00;
+    return Math.max(1.01, parseFloat((0.97 / (1 - r)).toFixed(2)));
+  }
+
+  // ── MULTIPLIER FROM ELAPSED ──
+  function timeToMult(ms) {
+    return parseFloat(Math.pow(Math.E, 0.00006 * ms).toFixed(2));
+  }
+
+  // ── CHART ──
+  const PAD = { l: 40, b: 30, t: 20, r: 20 };
+
+  function drawChart(pts, crashed) {
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const pw = W - PAD.l - PAD.r;
+    const ph = H - PAD.t  - PAD.b;
+
+    const maxT = pts.length ? pts[pts.length - 1].t : 1;
+    const maxM = Math.max(...pts.map(p => p.m), 1.5);
+
+    // grid
+    ctx.strokeStyle = '#1a2535'; ctx.lineWidth = 1;
+    ctx.fillStyle   = '#334455'; ctx.font = '11px Inter';
+    for (let i = 0; i <= 4; i++) {
+      const val = 1 + (maxM - 1) * (i / 4);
+      const y   = H - PAD.b - (i / 4) * ph;
+      ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
+      ctx.fillText(val.toFixed(1) + '×', 2, y + 4);
+    }
+
+    if (pts.length < 2) return;
+
+    const color = crashed ? '#ff3355' : '#00ff88';
+    const toX = t => PAD.l + (t / maxT) * pw;
+    const toY = m => H - PAD.b - ((m - 1) / (maxM - 1 || 1)) * ph;
+
+    // fill
+    const grad = ctx.createLinearGradient(0, PAD.t, 0, H - PAD.b);
+    grad.addColorStop(0, crashed ? 'rgba(255,51,85,.22)' : 'rgba(0,255,136,.16)');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(toX(p.t), toY(p.m)) : ctx.lineTo(toX(p.t), toY(p.m)));
+    ctx.lineTo(toX(pts[pts.length-1].t), H - PAD.b);
+    ctx.lineTo(PAD.l, H - PAD.b);
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+
+    // line
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(toX(p.t), toY(p.m)) : ctx.lineTo(toX(p.t), toY(p.m)));
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+    ctx.shadowColor = color; ctx.shadowBlur = 10;
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    // dot
+    const lp = pts[pts.length - 1];
+    ctx.beginPath(); ctx.arc(toX(lp.t), toY(lp.m), 5, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 14;
+    ctx.fill(); ctx.shadowBlur = 0;
+  }
+
+  // ── WAITING PHASE (rAF-based) ──
+  function startWaiting() {
+    phase     = 'waiting';
+    waitStart = performance.now();
+    chartPoints = [];
+    drawChart([], false);
+
+    setMultiplierEl('', false, true);   // hide big number, show ring
+    setStatus('NASTĘPNA RUNDA ZA');
+    ringWrap.classList.add('visible');
+    document.getElementById('multiplierDisplay').style.display = 'none';
+
+    setBetMode();
+    animId = requestAnimationFrame(waitLoop);
+  }
+
+  function waitLoop(now) {
+    const elapsed  = now - waitStart;
+    const remaining = Math.max(0, WAIT_DURATION - elapsed);
+    const fraction  = remaining / WAIT_DURATION;
+
+    setRing(fraction);
+    ringText.textContent = (remaining / 1000).toFixed(1);
+
+    if (remaining <= 0) {
+      ringWrap.classList.remove('visible');
+      document.getElementById('multiplierDisplay').style.display = '';
+      startRound();
+      return;
+    }
+    animId = requestAnimationFrame(waitLoop);
+  }
+
+  // ── RUNNING PHASE ──
+  function startRound() {
+    crashAt     = genCrashPoint();
+    multiplier  = 1.0;
+    phase       = 'running';
+    roundStart  = performance.now();
+    chartPoints = [{ t: 0, m: 1.0 }];
+
+    setMultiplierEl('1.00×', false, false);
+    setStatus('W TOKU');
+    setCashoutMode();
+    updateSideStats();
+    animId = requestAnimationFrame(runLoop);
+  }
+
+  function runLoop(now) {
+    const elapsed = now - roundStart;
+    multiplier    = timeToMult(elapsed);
+    chartPoints.push({ t: elapsed, m: multiplier });
+
+    // auto cashout check
+    if (playerIn && !cashedOut && autoCashout > 1 && multiplier >= autoCashout) {
+      multiplier = autoCashout;
+      doCashout(true);
+    }
+
+    if (multiplier >= crashAt) {
+      multiplier = crashAt;
+      doCrash();
+      return;
+    }
+
+    setMultiplierEl(multiplier.toFixed(2) + '×', false, false);
+    updateSideStats();
+    drawChart(chartPoints, false);
+    animId = requestAnimationFrame(runLoop);
+  }
+
+  // ── CRASH ──
+  function doCrash() {
+    phase = 'crashed';
+    cancelAnimationFrame(animId);
+    setMultiplierEl(multiplier.toFixed(2) + '×', true, false);
+    setStatus('CRASH!');
+    drawChart(chartPoints, true);
+
+    if (playerIn && !cashedOut) {
+      playerIn = false;
+      showToast('CRASH! Tracisz stawkę.', true);
+      renderBalance();
+    }
+
+    addHistory(multiplier);
+    resetPlayer();
+    setTimeout(startWaiting, 3500);
+  }
+
+  // ── CASHOUT ──
+  function doCashout(auto = false) {
+    if (!playerIn || cashedOut) return;
+    cashedOut = true;
+    const payout = Math.floor(playerBet * multiplier);
+    setBalance(getBalance() + payout);
+    showToast((auto ? 'AUTO WIN! ' : '') + '+' + payout.toLocaleString('pl-PL') + ' PKT');
+    setStatus(auto ? 'AUTO WIN!' : 'WYPŁACONO!');
+    resetPlayer();
+  }
+
+  // ── ACTION BUTTON ──
+  const actionBtn = document.getElementById('actionBtn');
+
+  actionBtn.addEventListener('click', () => {
+    if (phase === 'running' && playerIn && !cashedOut) {
+      doCashout(false);
+      return;
+    }
+    if (phase !== 'waiting') return;
+
+    const bet  = parseInt(document.getElementById('betInput').value, 10);
+    const auto = parseFloat(document.getElementById('autoInput').value);
+    if (!bet || bet < 1)          return alert('Podaj prawidłową stawkę.');
+    if (bet > getBalance())       return alert('Niewystarczające saldo.');
+
+    playerBet   = bet;
+    autoCashout = (!isNaN(auto) && auto > 1) ? auto : 0;
+    playerIn    = true;
+    cashedOut   = false;
+    setBalance(getBalance() - bet);
+    updateSideStats();
+
+    // lock inputs, show "CZEKAM..." on button until round starts
+    document.getElementById('betInput').disabled  = true;
+    document.getElementById('autoInput').disabled = true;
+    actionBtn.textContent = 'CZEKAM...';
+    actionBtn.disabled    = true;
+  });
+
+  function setBetMode() {
+    actionBtn.className   = 'mode-bet';
+    actionBtn.textContent = 'POSTAW';
+    actionBtn.disabled    = false;
+    document.getElementById('betInput').disabled  = false;
+    document.getElementById('autoInput').disabled = false;
+  }
+
+  function setCashoutMode() {
+    actionBtn.className   = 'mode-cashout';
+    actionBtn.textContent = 'WYPŁAĆ';
+    actionBtn.disabled    = !playerIn;   // disabled if not in round
+  }
+
+  function resetPlayer() {
+    playerIn  = false;
+    cashedOut = false;
+    // don't re-enable inputs here — setBetMode() handles it on next waiting phase
+  }
+
+  // ── SIDE STATS ──
+  function updateSideStats() {
+    const payout = playerIn ? Math.floor(playerBet * multiplier) : 0;
+    document.getElementById('sideMultiplier').textContent = multiplier.toFixed(2) + '×';
+    document.getElementById('sidePayout').textContent     = payout.toLocaleString('pl-PL') + ' PKT';
+  }
+
+  // ── HELPERS ──
+  function setMultiplierEl(text, crashed, hidden) {
+    const el = document.getElementById('multiplierDisplay');
+    el.textContent = text;
+    el.classList.toggle('crashed', crashed);
+    el.style.display = hidden ? 'none' : '';
+  }
+
+  function setStatus(text) {
+    document.getElementById('statusLabel').textContent = text;
+  }
+
+  // ── HISTORY ──
+  function addHistory(val) {
+    history.unshift(val);
+    if (history.length > 12) history.pop();
+    const c = document.getElementById('historyPills');
+    c.innerHTML = '';
+    history.forEach(v => {
+      const p = document.createElement('span');
+      p.className = 'pill ' + (v < 1.5 ? 'low' : v < 5 ? 'mid' : 'high');
+      p.textContent = v.toFixed(2) + '×';
+      c.appendChild(p);
+    });
+  }
+
+  // seed fake history
+  [1.45, 12.00, 1.02, 3.78, 1.21, 7.50, 1.01, 2.34].forEach(addHistory);
+
+  // ── TOAST ──
+  function showToast(msg, bad = false) {
+    const t = document.getElementById('toast');
+    t.textContent  = msg;
+    t.style.background = bad ? '#ff3355' : '#00ff88';
+    t.style.color      = bad ? '#fff'    : '#0a0e17';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── BOTS / LIVE BETS ──
+  const BOT_NAMES = [
+    'Janusz_Krypto', 'Wygrany_Marek', 'Lucky_Ania', 'NeonWolf',
+    'xKing99',       'CasinoJan',     'Gracz_PL',   'DiamondTom',
+    'MegaKasjer',    'Szybki_Zbyszek'
+  ];
+
+  function rand(min, max) { return Math.random() * (max - min) + min; }
+  function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
+
+  // Each bot keeps direct refs to its TD elements for zero-cost live updates
+  let bots = [];
+
+  function initBots() {
+    const tbody = document.getElementById('liveBetsBody');
+    tbody.innerHTML = '';
+    bots = BOT_NAMES.map(name => {
+      const bet       = randInt(50, 5000);
+      const cashoutAt = parseFloat(rand(1.15, 8).toFixed(2));
+
+      const tr = document.createElement('tr');
+      tr.className = 'state-waiting';
+      tr.innerHTML = `
+        <td class="bot-name">${name}</td>
+        <td class="bot-bet">${bet.toLocaleString('pl-PL')}</td>
+        <td class="bot-mult">—</td>
+        <td class="bot-win">—</td>
+        <td class="bot-status">Oczekuje</td>
+      `;
+      tbody.appendChild(tr);
+
+      const cells = tr.querySelectorAll('td');
+      return {
+        name, bet, cashoutAt,
+        state: 'waiting',
+        wonAt: null,
+        tr,
+        tdMult:   cells[2],
+        tdWin:    cells[3],
+        tdStatus: cells[4],
+      };
+    });
+  }
+
+  function botsStartRound() {
+    bots.forEach(b => {
+      b.state = 'in';
+      b.wonAt = null;
+      b.tr.className    = 'state-in';
+      b.tdMult.textContent   = '1.00×';
+      b.tdWin.textContent    = b.bet.toLocaleString('pl-PL');
+      b.tdStatus.textContent = 'W grze';
+    });
+  }
+
+  // Called every rAF frame during runLoop — updates live cells directly
+  function botsLiveUpdate() {
+    bots.forEach(b => {
+      if (b.state !== 'in') return;
+
+      // check cashout
+      if (multiplier >= b.cashoutAt) {
+        b.state = 'won';
+        b.wonAt = multiplier;
+        b.tr.className         = 'state-won';
+        b.tdMult.textContent   = multiplier.toFixed(2) + '×';
+        b.tdWin.textContent    = Math.floor(b.bet * multiplier).toLocaleString('pl-PL');
+        b.tdStatus.textContent = '✓ Wypłacono';
+        return;
+      }
+
+      // live update — direct DOM write, no innerHTML
+      b.tdMult.textContent = multiplier.toFixed(2) + '×';
+      b.tdWin.textContent  = Math.floor(b.bet * multiplier).toLocaleString('pl-PL');
+    });
+  }
+
+  function botsOnCrash() {
+    bots.forEach(b => {
+      if (b.state !== 'in') return;
+      b.state = 'lost';
+      b.tr.className         = 'state-lost';
+      b.tdMult.textContent   = multiplier.toFixed(2) + '×';
+      b.tdWin.textContent    = '0';
+      b.tdStatus.textContent = '✗ Crash';
+    });
+  }
+
+  // ── PATCH GAME PHASES ──
+  const _origStartWaiting = startWaiting;
+  startWaiting = function() {
+    initBots();
+    _origStartWaiting();
+  };
+
+  const _origStartRound = startRound;
+  startRound = function() {
+    botsStartRound();
+    _origStartRound();
+  };
+
+  // Inject live bot update directly into runLoop (same rAF frame as chart)
+  const _origRunLoop = runLoop;
+  runLoop = function(now) {
+    _origRunLoop(now);
+    // only update if still running (origRunLoop may have triggered crash)
+    if (phase === 'running') botsLiveUpdate();
+  };
+
+  const _origDoCrash = doCrash;
+  doCrash = function() {
+    botsOnCrash();
+    _origDoCrash();
+  };
+
+  // ── BOOT ──
+  startWaiting();
+</script>
+</body>
+</html>

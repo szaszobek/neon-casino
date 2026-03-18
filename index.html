@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Casino Lobby</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0e17;
+      color: #e0e0e0;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 32px;
+      border-bottom: 1px solid #1a2035;
+      position: sticky;
+      top: 0;
+      background: #0a0e17;
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #00ff88;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .wallet {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #111827;
+      border: 1px solid #1e2d40;
+      border-radius: 10px;
+      padding: 10px 18px;
+    }
+
+    .wallet-icon { font-size: 1.3rem; }
+
+    .wallet-label {
+      font-size: 0.7rem;
+      color: #556;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .wallet-amount {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #00ff88;
+    }
+
+    /* ── MAIN LAYOUT ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 28px;
+      max-width: 1200px;
+      margin: 32px auto;
+      padding: 0 24px;
+    }
+
+    /* ── FREE POINTS BUTTON ── */
+    .free-btn-wrap { margin-bottom: 28px; }
+
+    #freeBtn {
+      width: 100%;
+      padding: 18px;
+      background: transparent;
+      color: #00ff88;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border: 1px solid #00ff88;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 12px #00ff8840, inset 0 0 12px #00ff8808;
+      transition: background .2s, color .2s, box-shadow .2s, transform .1s;
+    }
+
+    #freeBtn:hover:not(:disabled) {
+      background: #00ff88;
+      color: #0a0e17;
+      box-shadow: 0 0 22px #00ff8880;
+      transform: translateY(-1px);
+    }
+    #freeBtn:active:not(:disabled) { transform: translateY(0); }
+
+    #freeBtn:disabled {
+      background: transparent;
+      border-color: #1e2d40;
+      color: #445;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    /* ── GAMES GRID ── */
+    .section-title {
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #445566;
+      margin-bottom: 16px;
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+    }
+
+    .game-card {
+      background: #111827;
+      border: 1px solid #1a2535;
+      border-radius: 14px;
+      padding: 24px 14px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      aspect-ratio: 1 / 1.1;
+      justify-content: center;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .game-card.active:hover {
+      border-color: #00ff8866;
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px #00ff8818;
+    }
+
+    .game-card.inactive {
+      background: #0c1018;
+      border-color: #111820;
+      filter: grayscale(1);
+      opacity: 0.38;
+      pointer-events: none;
+    }
+
+    .game-icon {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .game-name {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-align: center;
+      color: #ccd;
+      letter-spacing: 0.5px;
+    }
+
+    .game-card.inactive .game-name { color: #445; }
+
+    .play-btn {
+      margin-top: 2px;
+      padding: 7px 20px;
+      background: transparent;
+      border: 1px solid #00ff88;
+      color: #00ff88;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, color .2s;
+    }
+
+    .play-btn:hover {
+      background: #00ff88;
+      color: #0a0e17;
+    }
+
+    .soon-badge {
+      margin-top: 2px;
+      padding: 5px 14px;
+      border: 1px solid #1e2d40;
+      border-radius: 8px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: #334;
+      text-transform: uppercase;
+    }
+
+    .lock-icon { font-size: 1rem; opacity: .5; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {}
+
+    .leaderboard {
+      background: #111827;
+      border: 1px solid #1a2535;
+      border-radius: 14px;
+      padding: 20px;
+      position: sticky;
+      top: 90px;
+    }
+
+    .leaderboard h3 {
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #445566;
+      margin-bottom: 18px;
+    }
+
+    .lb-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 0;
+      border-bottom: 1px solid #1a2535;
+    }
+
+    .lb-row:last-child { border-bottom: none; }
+
+    .lb-rank {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #334;
+      width: 18px;
+      text-align: center;
+    }
+
+    .lb-rank.gold   { color: #ffd700; }
+    .lb-rank.silver { color: #aaa; }
+    .lb-rank.bronze { color: #cd7f32; }
+
+    .lb-name {
+      flex: 1;
+      font-size: 0.82rem;
+      color: #bbc;
+    }
+
+    .lb-score {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #00ff88;
+    }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #00ff88;
+      color: #0a0e17;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 700px) {
+      .layout { grid-template-columns: 1fr; }
+      .leaderboard { position: static; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⬡ NeonCasino</div>
+  <div class="wallet">
+    <span class="wallet-icon">🪙</span>
+    <div>
+      <div class="wallet-label">Saldo</div>
+      <div class="wallet-amount" id="balanceDisplay">0 PKT</div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- LEFT: main content -->
+  <main>
+    <div class="free-btn-wrap">
+      <button id="freeBtn">ODBIERZ DARMOWY BONUS</button>
+    </div>
+
+    <p class="section-title">Wybierz grę</p>
+    <div class="games-grid" id="gamesGrid"></div>
+  </main>
+
+  <!-- RIGHT: sidebar -->
+  <aside class="sidebar">
+    <div class="leaderboard">
+      <h3>🏆 Lokalni Rekordziści</h3>
+      <div id="leaderboardList"></div>
+    </div>
+  </aside>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── WALLET ──
+  const BALANCE_KEY = 'casino_balance';
+
+  function getBalance() {
+    const val = localStorage.getItem(BALANCE_KEY);
+    if (val === null) {
+      localStorage.setItem(BALANCE_KEY, '25000');
+      return 25000;
+    }
+    return parseInt(val, 10);
+  }
+
+  function setBalance(n) {
+    localStorage.setItem(BALANCE_KEY, String(n));
+    renderBalance();
+  }
+
+  function renderBalance() {
+    document.getElementById('balanceDisplay').textContent =
+      getBalance().toLocaleString('pl-PL') + ' PKT';
+  }
+
+  renderBalance();
+
+  // ── FREE BUTTON ──
+  const COOLDOWN_KEY = 'casino_free_cooldown';
+  const COOLDOWN_MS  = 300_000;
+  const freeBtn      = document.getElementById('freeBtn');
+
+  function startCooldown(remaining) {
+    freeBtn.disabled = true;
+    const interval = setInterval(() => {
+      remaining -= 1000;
+      if (remaining <= 0) {
+        clearInterval(interval);
+        freeBtn.disabled = false;
+        freeBtn.textContent = 'ODBIERZ DARMOWY BONUS';
+      } else {
+        const m = Math.floor(remaining / 60000);
+        const s = Math.ceil((remaining % 60000) / 1000);
+        freeBtn.textContent = `POCZEKAJ ${m}:${String(s).padStart(2, '0')}`;
+      }
+    }, 1000);
+    const m = Math.floor(remaining / 60000);
+    const s = Math.ceil((remaining % 60000) / 1000);
+    freeBtn.textContent = `POCZEKAJ ${m}:${String(s).padStart(2, '0')}`;
+  }
+
+  // restore cooldown on page load
+  const savedCooldown = localStorage.getItem(COOLDOWN_KEY);
+  if (savedCooldown) {
+    const remaining = parseInt(savedCooldown, 10) - Date.now();
+    if (remaining > 0) startCooldown(remaining);
+    else localStorage.removeItem(COOLDOWN_KEY);
+  }
+
+  freeBtn.addEventListener('click', () => {
+    setBalance(getBalance() + 1000);
+    showToast('+1000 PKT dodane!');
+    const expires = Date.now() + COOLDOWN_MS;
+    localStorage.setItem(COOLDOWN_KEY, String(expires));
+    startCooldown(COOLDOWN_MS);
+  });
+
+  // ── GAMES ──
+  const games = [
+    { icon: '🚀', name: 'Crash',     href: 'crash.html',     active: true  },
+    { icon: '🎡', name: 'Ruletka',   href: 'roulette.html',  active: true  },
+    { icon: '💣', name: 'Mines',     href: 'mines.html',     active: true  },
+    { icon: '🃏', name: 'Blackjack', href: 'blackjack.html', active: true  },
+    { icon: '🎰', name: 'Slots',     href: '#',              active: false },
+    { icon: '🎲', name: 'Kości',     href: '#',              active: false },
+    { icon: '🎯', name: 'Hi-Lo',     href: '#',              active: false },
+  ];
+
+  const grid = document.getElementById('gamesGrid');
+  games.forEach(g => {
+    if (g.active) {
+      const card = document.createElement('a');
+      card.className = 'game-card active';
+      card.href = g.href;
+      card.innerHTML = `<span class="game-icon">${g.icon}</span>
+         <span class="game-name">${g.name}</span>
+         <span class="play-btn">GRAJ</span>`;
+      grid.appendChild(card);
+    } else {
+      const card = document.createElement('div');
+      card.className = 'game-card inactive';
+      card.innerHTML = `<span class="lock-icon">🔒</span>
+         <span class="game-icon">${g.icon}</span>
+         <span class="game-name">${g.name}</span>
+         <span class="soon-badge">Wkrótce</span>`;
+      grid.appendChild(card);
+    }
+  });
+
+  // ── LEADERBOARD ──
+  const defaultLeaders = [
+    { name: 'Marek_PL',   score: 482_000 },
+    { name: 'xKing99',    score: 310_500 },
+    { name: 'LuckyAnia',  score: 275_200 },
+    { name: 'NeonWolf',   score: 198_750 },
+    { name: 'CasinoJan',  score: 134_000 },
+  ];
+
+  const rankClasses = ['gold', 'silver', 'bronze', '', ''];
+  const lbList = document.getElementById('leaderboardList');
+
+  defaultLeaders.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-row';
+    row.innerHTML = `
+      <span class="lb-rank ${rankClasses[i]}">#${i + 1}</span>
+      <span class="lb-name">${p.name}</span>
+      <span class="lb-score">${p.score.toLocaleString('pl-PL')}</span>
+    `;
+    lbList.appendChild(row);
+  });
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+</script>
+</body>
+</html>

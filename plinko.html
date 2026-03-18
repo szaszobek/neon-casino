@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plinko – NeonCasino</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0e17; color: #e0e0e0; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+    header { display: flex; align-items: center; justify-content: space-between; padding: 16px 28px; border-bottom: 1px solid #1a2035; flex-shrink: 0; }
+    .logo { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; font-weight: 700; letter-spacing: 3px; color: #00ff88; text-transform: uppercase; text-decoration: none; }
+    .wallet { display: flex; align-items: center; gap: 10px; background: #111827; border: 1px solid #1e2d40; border-radius: 10px; padding: 9px 16px; }
+    .wallet-label { font-size: 0.68rem; color: #556; text-transform: uppercase; letter-spacing: 1px; }
+    .wallet-amount { font-size: 1rem; font-weight: 700; color: #00ff88; }
+
+    .main { display: flex; gap: 22px; max-width: 1060px; margin: 24px auto; padding: 0 20px; width: 100%; align-items: flex-start; flex: 1; }
+
+    /* CANVAS AREA */
+    .canvas-wrap { flex: 1; position: relative; background: #0d1220; border: 1px solid #1a2535; border-radius: 16px; overflow: hidden; }
+    #plinkoCanvas { display: block; }
+
+    /* SIDEBAR */
+    .sidebar { width: 210px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; }
+    .panel { background: #111827; border: 1px solid #1a2535; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 0.68rem; letter-spacing: 1.5px; text-transform: uppercase; color: #445566; }
+    .field input[type="number"] { width: 100%; background: #0d1220; border: 1px solid #1e2d40; border-radius: 8px; color: #e0e0e0; font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 700; padding: 10px 12px; outline: none; transition: border-color .2s; }
+    .field input:focus { border-color: #00ff8866; }
+    .field input::-webkit-inner-spin-button { opacity: .4; }
+
+    #dropBtn { width: 100%; padding: 15px; background: transparent; border: 1px solid #00ff88; border-radius: 10px; color: #00ff88; font-family: 'Inter', sans-serif; font-size: 0.9rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 0 10px #00ff8830; transition: background .2s, color .2s, box-shadow .2s; }
+    #dropBtn:hover { background: #00ff88; color: #0a0e17; box-shadow: 0 0 22px #00ff8870; }
+
+    .history-wrap { background: #111827; border: 1px solid #1a2535; border-radius: 12px; padding: 14px; }
+    .history-label { font-size: 0.68rem; letter-spacing: 2px; text-transform: uppercase; color: #445566; margin-bottom: 10px; }
+    .history-list { display: flex; flex-direction: column; gap: 5px; }
+    .hist-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; padding: 5px 8px; border-radius: 7px; background: #0d1220; }
+    .hist-mult { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+    .hist-mult.high { color: #00ff88; }
+    .hist-mult.mid  { color: #ffaa00; }
+    .hist-mult.low  { color: #ff3355; }
+    .hist-win  { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #556; }
+
+    .btn-back { width: 100%; padding: 11px; background: transparent; border: 1px solid #1e2d40; border-radius: 10px; color: #556; font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; text-decoration: none; display: block; text-align: center; transition: border-color .2s, color .2s; }
+    .btn-back:hover { border-color: #334; color: #aab; }
+
+    /* WIN POPUP */
+    .win-popup { position: absolute; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 800; color: #00ff88; text-shadow: 0 0 10px #00ff88; pointer-events: none; animation: popUp .9s ease forwards; white-space: nowrap; }
+    @keyframes popUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-50px) scale(1.3)} }
+
+    @media (max-width: 680px) { .main { flex-direction: column; } .sidebar { width: 100%; } }
+  </style>
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html">⬡ NeonCasino</a>
+  <div class="wallet">
+    <span>🪙</span>
+    <div>
+      <div class="wallet-label">Saldo</div>
+      <div class="wallet-amount" id="balanceDisplay">0 PKT</div>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="plinkoCanvas"></canvas>
+  </div>
+
+  <aside class="sidebar">
+    <div class="panel">
+      <div class="field">
+        <label>Stawka (PKT)</label>
+        <input type="number" id="betInput" min="1" value="100" />
+      </div>
+      <button id="dropBtn">🎯 PUŚĆ KULKĘ</button>
+    </div>
+
+    <div class="history-wrap">
+      <div class="history-label">Ostatnie trafienia</div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+
+    <a class="btn-back" href="index.html">← Powrót do Lobby</a>
+  </aside>
+</div>
+
+<script>
+  // ── BALANCE ──
+  const BAL_KEY    = 'casino_balance';
+  const getBalance = () => parseInt(localStorage.getItem(BAL_KEY) || '25000', 10);
+  const setBalance = v  => { localStorage.setItem(BAL_KEY, String(v)); renderBalance(); };
+  const renderBalance  = () => {
+    document.getElementById('balanceDisplay').textContent = getBalance().toLocaleString('pl-PL') + ' PKT';
+  };
+  renderBalance();
+
+  // ── MATTER.JS SETUP ──
+  const { Engine, Render, Runner, Bodies, Body, World, Events, Composite } = Matter;
+
+  const ROWS      = 12;
+  const MULTS     = [29, 18, 10, 5, 2, 0.5, 0.2, 0.2, 0.2, 0.5, 2, 5, 10, 18, 29];
+  const SLOTS     = MULTS.length; // 15
+  const PEG_R     = 5;
+  const BALL_R    = 4;
+
+  const wrap      = document.getElementById('canvasWrap');
+  const canvas    = document.getElementById('plinkoCanvas');
+
+  // size canvas to wrap
+  function getW() { return wrap.clientWidth; }
+  function getH() { return Math.max(560, wrap.clientHeight || 560); }
+
+  let W = getW(), H = getH();
+  canvas.width  = W;
+  canvas.height = H;
+
+  const engine  = Engine.create({ gravity: { y: 2.0 } });
+  const world   = engine.world;
+
+  // custom renderer (we draw manually for glow effects)
+  const runner  = Runner.create();
+  Runner.run(runner, engine);
+
+  // ── LAYOUT HELPERS ──
+  const TOP_PAD    = 80;
+  const BOT_PAD    = 80; // space for slot labels
+  const PLAY_H     = H - TOP_PAD - BOT_PAD;
+
+  // Wide symmetric pyramid: x = W/2 + (col - row/2) * spacingX
+  const SPACING_X = 55;
+  const SPACING_Y = 45;
+
+  function pegX(row, col) {
+    return W / 2 + (col - row / 2) * SPACING_X;
+  }
+
+  function pegY(row) {
+    return TOP_PAD + (row + 1) * SPACING_Y;
+  }
+
+  // slots sit under the gaps of the last row (ROWS-1 has ROWS pegs → ROWS+1 gaps = SLOTS)
+  function slotX(i) {
+    // last row pegs span from pegX(ROWS-1, 0) to pegX(ROWS-1, ROWS-1)
+    // gaps are half-spacing outside each end and between every peg
+    return W / 2 + (i - (ROWS - 1) / 2 - 0.5) * SPACING_X + SPACING_X / 2;
+  }
+
+  // ── BUILD PEGS ──
+  const pegs = [];
+  const pegFlash = new Map(); // pegBody.id → flash intensity 0-1
+
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col <= row; col++) {
+      const x = pegX(row, col);
+      const y = pegY(row);
+      const peg = Bodies.circle(x, y, PEG_R, {
+        isStatic: true, restitution: 0.4, friction: 0.01,
+        label: 'peg',
+        render: { fillStyle: '#ffffff' }
+      });
+      peg._row = row; peg._col = col;
+      World.add(world, peg);
+      pegs.push(peg);
+      pegFlash.set(peg.id, 0);
+    }
+  }
+
+  // ── WALLS ──
+  const wallOpts = { isStatic: true, friction: 0.1, restitution: 0.3, label: 'wall', render: { fillStyle: 'transparent' } };
+  World.add(world, [
+    Bodies.rectangle(-10, H / 2, 20, H * 2, wallOpts),
+    Bodies.rectangle(W + 10, H / 2, 20, H * 2, wallOpts),
+    Bodies.rectangle(W / 2, H + 10, W * 2, 20, { ...wallOpts, label: 'floor' }),
+  ]);
+
+  // ── SLOT SENSORS ──
+  const slotSensors = [];
+  const slotH = 30;
+  const slotY = H - BOT_PAD + slotH / 2;
+  const slotW = SPACING_X - 4;
+
+  for (let i = 0; i < SLOTS; i++) {
+    const sx = slotX(i);
+    const sensor = Bodies.rectangle(sx, slotY, slotW, slotH, {
+      isStatic: true, isSensor: true, label: 'slot_' + i,
+      render: { fillStyle: 'transparent' }
+    });
+    World.add(world, sensor);
+    slotSensors.push(sensor);
+  }
+
+  // ── BALLS ──
+  const balls = [];
+  const ballBets = new Map(); // ball.id → bet amount
+  const caughtBalls = new Set();
+
+  function removeBall(ball) {
+    if (!ballBets.has(ball.id)) return; // already removed
+    Composite.remove(world, ball);
+    const idx = balls.indexOf(ball);
+    if (idx > -1) balls.splice(idx, 1);
+    ballBets.delete(ball.id);
+    caughtBalls.delete(ball.id);
+  }
+
+  function dropBall(bet) {
+    const jitter = (Math.random() - 0.5) * 4;
+    const ball = Bodies.circle(W / 2 + jitter, TOP_PAD - 10, BALL_R, {
+      restitution: 0.4, friction: 0.001, frictionAir: 0.008,
+      label: 'ball',
+      render: { fillStyle: '#ff66aa' }
+    });
+    ball._createdAt = Date.now();
+    Body.setVelocity(ball, { x: (Math.random() - 0.5) * 1.5, y: 2 });
+    World.add(world, ball);
+    balls.push(ball);
+    ballBets.set(ball.id, bet);
+  }
+
+  // Auto-cleanup: remove balls below board or older than 15s + anti-stuck nudge
+  setInterval(() => {
+    const now = Date.now();
+    [...balls].forEach(ball => {
+      const age     = now - ball._createdAt;
+      const tooOld  = age > 10000;
+      const tooLow  = ball.position.y > H + 20;
+
+      if (tooOld || tooLow) { removeBall(ball); return; }
+
+      // anti-stuck: nudge balls that are barely moving after 2s
+      if (age > 2000 && ball.speed < 0.2) {
+        Body.applyForce(ball, ball.position, {
+          x: (Math.random() - 0.5) * 0.004,
+          y: 0.002
+        });
+      }
+    });
+  }, 1000);
+
+  // ── COLLISION: peg flash + slot catch ──
+  Events.on(engine, 'collisionStart', e => {
+    e.pairs.forEach(pair => {
+      const { bodyA, bodyB } = pair;
+
+      // peg flash
+      [bodyA, bodyB].forEach(b => {
+        if (b.label === 'peg') pegFlash.set(b.id, 1.0);
+      });
+
+      // slot catch
+      const ball   = bodyA.label === 'ball' ? bodyA : bodyB.label === 'ball' ? bodyB : null;
+      const sensor = bodyA.label?.startsWith('slot_') ? bodyA : bodyB.label?.startsWith('slot_') ? bodyB : null;
+
+      if (ball && sensor && !caughtBalls.has(ball.id)) {
+        // read bet BEFORE adding to caughtBalls or calling removeBall
+        const bet = ballBets.get(ball.id);
+        if (bet === undefined) return; // ball already cleaned up
+        caughtBalls.add(ball.id);
+        const slotIdx = parseInt(sensor.label.split('_')[1]);
+        const mult    = MULTS[slotIdx];
+        const win     = Math.floor(bet * mult);
+        setBalance(getBalance() + win);
+        addHistory(mult, win);
+        showWinPopup(slotX(slotIdx), H - BOT_PAD - 10, '+' + win.toLocaleString('pl-PL'), mult);
+        // immediate removal
+        Composite.remove(world, ball);
+        const idx = balls.indexOf(ball);
+        if (idx > -1) balls.splice(idx, 1);
+        ballBets.delete(ball.id);
+      }
+    });
+  });
+
+  // ── CUSTOM DRAW LOOP ──
+  const ctx = canvas.getContext('2d');
+
+  function multColor(m) {
+    if (m >= 10) return '#00ff88';
+    if (m >= 2)  return '#ffaa00';
+    return '#ff3355';
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // background
+    ctx.fillStyle = '#0d1220';
+    ctx.fillRect(0, 0, W, H);
+
+    // ── SLOT LABELS ──
+    for (let i = 0; i < SLOTS; i++) {
+      const sx  = slotX(i);
+      const m   = MULTS[i];
+      const col = multColor(m);
+      const sw  = SPACING_X - 4;
+
+      ctx.fillStyle   = col + '22';
+      ctx.strokeStyle = col + '88';
+      ctx.lineWidth   = 1;
+      const bx = sx - sw / 2, by = H - BOT_PAD + 4;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, sw, BOT_PAD - 8, 6);
+      ctx.fill(); ctx.stroke();
+
+      ctx.fillStyle    = col;
+      ctx.font         = 'bold 10px JetBrains Mono, monospace';
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(m + '×', sx, H - BOT_PAD + (BOT_PAD - 8) / 2 + 4);
+    }
+
+    // ── PEGS ──
+    pegs.forEach(peg => {
+      const flash = pegFlash.get(peg.id) || 0;
+      const alpha = 0.4 + flash * 0.6;
+      const r     = PEG_R + flash * 3;
+
+      ctx.beginPath();
+      ctx.arc(peg.position.x, peg.position.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      if (flash > 0.1) {
+        ctx.shadowColor = '#00ff88';
+        ctx.shadowBlur  = 12 * flash;
+      }
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // decay flash
+      if (flash > 0) pegFlash.set(peg.id, Math.max(0, flash - 0.06));
+    });
+
+    // ── BALLS ──
+    balls.forEach(ball => {
+      const { x, y } = ball.position;
+      // glow
+      ctx.beginPath();
+      ctx.arc(x, y, BALL_R + 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,100,180,0.18)';
+      ctx.fill();
+      // ball
+      ctx.beginPath();
+      ctx.arc(x, y, BALL_R, 0, Math.PI * 2);
+      const grad = ctx.createRadialGradient(x - 2, y - 2, 1, x, y, BALL_R);
+      grad.addColorStop(0, '#ffaadd');
+      grad.addColorStop(1, '#cc3388');
+      ctx.fillStyle   = grad;
+      ctx.shadowColor = '#ff66aa';
+      ctx.shadowBlur  = 14;
+      ctx.fill();
+      ctx.shadowBlur  = 0;
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+
+  // ── DROP BUTTON ──
+  document.getElementById('dropBtn').addEventListener('click', () => {
+    const bet = parseInt(document.getElementById('betInput').value, 10);
+    if (!bet || bet < 1) return alert('Podaj prawidłową stawkę.');
+    if (bet > getBalance()) return alert('Niewystarczające saldo.');
+    setBalance(getBalance() - bet);
+    dropBall(bet);
+  });
+
+  // ── WIN POPUP ──
+  function showWinPopup(x, y, text, mult) {
+    const el = document.createElement('div');
+    el.className   = 'win-popup';
+    el.textContent = text;
+    el.style.color = multColor(mult);
+    el.style.textShadow = `0 0 10px ${multColor(mult)}`;
+    el.style.left  = (x - 30) + 'px';
+    el.style.top   = (y - 20) + 'px';
+    wrap.appendChild(el);
+    setTimeout(() => el.remove(), 950);
+  }
+
+  // ── HISTORY ──
+  const historyData = [];
+  function addHistory(mult, win) {
+    historyData.unshift({ mult, win });
+    if (historyData.length > 10) historyData.pop();
+    const list = document.getElementById('historyList');
+    list.innerHTML = '';
+    historyData.forEach(h => {
+      const div = document.createElement('div');
+      div.className = 'hist-item';
+      const cls = h.mult >= 10 ? 'high' : h.mult >= 2 ? 'mid' : 'low';
+      div.innerHTML = `<span class="hist-mult ${cls}">${h.mult}×</span><span class="hist-win">+${h.win.toLocaleString('pl-PL')} PKT</span>`;
+      list.appendChild(div);
+    });
+  }
+
+  // ── RESIZE ──
+  window.addEventListener('resize', () => {
+    W = getW(); H = getH();
+    canvas.width = W; canvas.height = H;
+    // rebuild — simplest approach for resize
+    World.clear(world); Engine.clear(engine);
+    pegs.length = 0; balls.length = 0;
+    pegFlash.clear(); ballBets.clear(); caughtBalls.clear();
+    location.reload(); // full rebuild on resize
+  });
+</script>
+</body>
+</html>

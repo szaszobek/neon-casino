@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mines – NeonCasino</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0e17;
+      color: #e0e0e0;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 28px;
+      border-bottom: 1px solid #1a2035;
+      background: #0a0e17;
+    }
+
+    .logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #00ff88;
+      text-transform: uppercase;
+      text-decoration: none;
+    }
+
+    .wallet {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #111827;
+      border: 1px solid #1e2d40;
+      border-radius: 10px;
+      padding: 9px 16px;
+    }
+    .wallet-label { font-size: 0.68rem; color: #556; text-transform: uppercase; letter-spacing: 1px; }
+    .wallet-amount { font-size: 1rem; font-weight: 700; color: #00ff88; }
+
+    /* ── LAYOUT ── */
+    .game-wrap {
+      display: flex;
+      gap: 24px;
+      max-width: 860px;
+      margin: 32px auto;
+      padding: 0 20px;
+      width: 100%;
+      align-items: flex-start;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 210px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .panel {
+      background: #111827;
+      border: 1px solid #1a2535;
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .panel label {
+      display: block;
+      font-size: 0.68rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #445566;
+      margin-bottom: 7px;
+    }
+
+    .panel input[type="number"] {
+      width: 100%;
+      background: #0d1220;
+      border: 1px solid #1e2d40;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .panel input[type="number"]:focus { border-color: #00ff8866; }
+    .panel input[type="number"]::-webkit-inner-spin-button { opacity: .4; }
+
+    .mines-select {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .mines-select button {
+      background: #0d1220;
+      border: 1px solid #1e2d40;
+      border-radius: 7px;
+      color: #778;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 7px 4px;
+      cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .mines-select button:hover { border-color: #00ff8855; color: #00ff88; }
+    .mines-select button.active {
+      border-color: #00ff88;
+      color: #00ff88;
+      background: #00ff8812;
+    }
+
+    /* stat rows */
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #1a2535;
+      font-size: 0.82rem;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-label { color: #556; }
+    .stat-value { font-weight: 700; color: #e0e0e0; }
+    .stat-value.green { color: #00ff88; }
+
+    /* action buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: transparent;
+      border: 1px solid #00ff88;
+      border-radius: 10px;
+      color: #00ff88;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 10px #00ff8830;
+      transition: background .2s, color .2s, box-shadow .2s;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #00ff88;
+      color: #0a0e17;
+      box-shadow: 0 0 20px #00ff8870;
+    }
+    .btn-primary:disabled {
+      border-color: #1e2d40;
+      color: #334;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+
+    .btn-cashout {
+      width: 100%;
+      padding: 14px;
+      background: #00ff88;
+      border: none;
+      border-radius: 10px;
+      color: #0a0e17;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 18px #00ff8860;
+      transition: opacity .2s, transform .1s;
+      display: none;
+    }
+    .btn-cashout:hover { opacity: .88; transform: translateY(-1px); }
+    .btn-cashout.visible { display: block; }
+
+    .btn-back {
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      border: 1px solid #1e2d40;
+      border-radius: 10px;
+      color: #556;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      transition: border-color .2s, color .2s;
+    }
+    .btn-back:hover { border-color: #334; color: #aab; }
+
+    /* ── GRID ── */
+    .grid-area { flex: 1; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    .cell {
+      aspect-ratio: 1;
+      background: #111827;
+      border: 1px solid #1e2d40;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      transition: border-color .15s, background .15s, transform .1s, box-shadow .15s;
+      user-select: none;
+    }
+
+    .cell:hover:not(.revealed):not(.disabled) {
+      border-color: #00ff8866;
+      background: #0d1a2a;
+      transform: scale(1.04);
+    }
+
+    .cell.revealed-gem {
+      background: #0a1f14;
+      border-color: #00ff88;
+      box-shadow: 0 0 14px #00ff8850;
+      cursor: default;
+    }
+
+    .cell.revealed-mine {
+      background: #1f0a0a;
+      border-color: #ff3355;
+      box-shadow: 0 0 14px #ff335550;
+      cursor: default;
+    }
+
+    .cell.disabled {
+      cursor: default;
+    }
+
+    /* result banner */
+    #resultBanner {
+      display: none;
+      text-align: center;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+    #resultBanner.win {
+      display: block;
+      background: #0a1f14;
+      border: 1px solid #00ff88;
+      color: #00ff88;
+    }
+    #resultBanner.lose {
+      display: block;
+      background: #1f0a0a;
+      border: 1px solid #ff3355;
+      color: #ff3355;
+    }
+
+    @media (max-width: 640px) {
+      .game-wrap { flex-direction: column; }
+      .sidebar { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="index.html">⬡ NeonCasino</a></a>
+  <div class="wallet">
+    <span>🪙</span>
+    <div>
+      <div class="wallet-label">Saldo</div>
+      <div class="wallet-amount" id="balanceDisplay">0 PKT</div>
+    </div>
+  </div>
+</header>
+
+<div class="game-wrap">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+
+    <div class="panel">
+      <label>Stawka (PKT)</label>
+      <input type="number" id="betInput" min="1" value="100" />
+    </div>
+
+    <div class="panel">
+      <label>Liczba min</label>
+      <div class="mines-select" id="minesSelect"></div>
+    </div>
+
+    <div class="panel">
+      <div class="stat-row">
+        <span class="stat-label">Mnożnik</span>
+        <span class="stat-value green" id="multiplierDisplay">1.00×</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Do wypłaty</span>
+        <span class="stat-value green" id="payoutDisplay">0 PKT</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Odkryte pola</span>
+        <span class="stat-value" id="revealedDisplay">0 / 25</span>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="betBtn">BET</button>
+    <button class="btn-cashout" id="cashoutBtn">CASH OUT</button>
+    <a class="btn-back" href="index.html">← Powrót do Lobby</a>
+
+  </aside>
+
+  <!-- GRID -->
+  <div class="grid-area">
+    <div id="resultBanner"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+</div>
+
+<script>
+  // ── BALANCE ──
+  const BAL_KEY = 'casino_balance';
+  const getBalance = () => parseInt(localStorage.getItem(BAL_KEY) || '25000', 10);
+  const setBalance = v => { localStorage.setItem(BAL_KEY, String(v)); renderBalance(); };
+  const renderBalance = () => {
+    document.getElementById('balanceDisplay').textContent =
+      getBalance().toLocaleString('pl-PL') + ' PKT';
+  };
+  renderBalance();
+
+  // ── MINES SELECTOR ──
+  let selectedMines = 3;
+  const minesSelect = document.getElementById('minesSelect');
+  [1,2,3,4,5,6,8,10,12,15,18,20,22,24].forEach(n => {
+    const btn = document.createElement('button');
+    btn.textContent = n;
+    btn.dataset.val = n;
+    if (n === selectedMines) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      if (gameActive) return;
+      selectedMines = n;
+      minesSelect.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+    minesSelect.appendChild(btn);
+  });
+
+  // ── GAME STATE ──
+  let gameActive   = false;
+  let minePositions = new Set();
+  let revealedCount = 0;
+  let currentBet   = 0;
+  let multiplier   = 1.0;
+
+  const SAFE_CELLS = 25; // total cells
+
+  // Multiplier formula: each safe reveal increases multiplier
+  // Based on hypergeometric probability
+  function calcMultiplier(revealed, mines) {
+    let mult = 1.0;
+    for (let i = 0; i < revealed; i++) {
+      const safeCells = SAFE_CELLS - mines - i;
+      const remaining = SAFE_CELLS - i;
+      mult *= remaining / safeCells;
+    }
+    return parseFloat((mult * 0.97).toFixed(2)); // 3% house edge
+  }
+
+  // ── BUILD GRID ──
+  const grid = document.getElementById('grid');
+  const cells = [];
+
+  for (let i = 0; i < 25; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell disabled';
+    cell.dataset.idx = i;
+    cell.addEventListener('click', () => onCellClick(i));
+    grid.appendChild(cell);
+    cells.push(cell);
+  }
+
+  // ── BET ──
+  document.getElementById('betBtn').addEventListener('click', startGame);
+
+  function startGame() {
+    const bet = parseInt(document.getElementById('betInput').value, 10);
+    if (!bet || bet < 1) return alert('Podaj prawidłową stawkę.');
+    if (bet > getBalance()) return alert('Niewystarczające saldo.');
+
+    currentBet = bet;
+    setBalance(getBalance() - bet);
+
+    // place mines
+    minePositions.clear();
+    while (minePositions.size < selectedMines) {
+      minePositions.add(Math.floor(Math.random() * 25));
+    }
+
+    revealedCount = 0;
+    multiplier    = 1.0;
+    gameActive    = true;
+
+    // reset cells
+    cells.forEach(c => {
+      c.className = 'cell';
+      c.textContent = '';
+    });
+
+    document.getElementById('resultBanner').className = '';
+    document.getElementById('resultBanner').style.display = 'none';
+
+    updateStats();
+    setControls(true);
+  }
+
+  // ── CELL CLICK ──
+  function onCellClick(idx) {
+    if (!gameActive) return;
+    const cell = cells[idx];
+    if (cell.classList.contains('revealed-gem') || cell.classList.contains('revealed-mine')) return;
+
+    if (minePositions.has(idx)) {
+      // MINE HIT
+      cell.classList.add('revealed-mine');
+      cell.textContent = '💣';
+      gameOver(false);
+    } else {
+      // SAFE
+      revealedCount++;
+      multiplier = calcMultiplier(revealedCount, selectedMines);
+      cell.classList.add('revealed-gem');
+      cell.textContent = '💎';
+      updateStats();
+
+      // all safe cells revealed
+      if (revealedCount === 25 - selectedMines) {
+        cashOut();
+      }
+    }
+  }
+
+  // ── CASH OUT ──
+  document.getElementById('cashoutBtn').addEventListener('click', cashOut);
+
+  function cashOut() {
+    if (!gameActive || revealedCount === 0) return;
+    const payout = Math.floor(currentBet * multiplier);
+    setBalance(getBalance() + payout);
+    showResult(true, payout);
+    endGame();
+  }
+
+  function gameOver(win) {
+    if (!win) {
+      // reveal all mines
+      minePositions.forEach(idx => {
+        if (!cells[idx].classList.contains('revealed-mine')) {
+          cells[idx].classList.add('revealed-mine');
+          cells[idx].textContent = '💣';
+        }
+      });
+      showResult(false, 0);
+    }
+    endGame();
+  }
+
+  function endGame() {
+    gameActive = false;
+    setControls(false);
+    cells.forEach(c => c.classList.add('disabled'));
+  }
+
+  // ── UI HELPERS ──
+  function updateStats() {
+    const payout = revealedCount > 0 ? Math.floor(currentBet * multiplier) : 0;
+    document.getElementById('multiplierDisplay').textContent =
+      (revealedCount > 0 ? multiplier : '1.00') + '×';
+    document.getElementById('payoutDisplay').textContent =
+      payout.toLocaleString('pl-PL') + ' PKT';
+    document.getElementById('revealedDisplay').textContent =
+      revealedCount + ' / ' + (25 - selectedMines);
+  }
+
+  function setControls(playing) {
+    document.getElementById('betBtn').disabled = playing;
+    document.getElementById('betInput').disabled = playing;
+    minesSelect.querySelectorAll('button').forEach(b => b.disabled = playing);
+    const co = document.getElementById('cashoutBtn');
+    if (playing) co.classList.add('visible');
+    else co.classList.remove('visible');
+  }
+
+  function showResult(win, amount) {
+    const banner = document.getElementById('resultBanner');
+    if (win) {
+      banner.className = 'win';
+      banner.textContent = `WYGRANA! +${amount.toLocaleString('pl-PL')} PKT`;
+    } else {
+      banner.className = 'lose';
+      banner.textContent = 'MINA! Tracisz stawkę.';
+    }
+  }
+</script>
+</body>
+</html>
